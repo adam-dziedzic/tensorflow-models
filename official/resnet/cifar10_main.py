@@ -39,7 +39,7 @@ _NUM_CLASSES = 10
 _NUM_DATA_FILES = 5
 
 _NUM_IMAGES = {
-    'train': 5000,  # 'train': 50000 - to train on all of the images
+    'train': 50000,  # 'train': 50000 - to train on all of the images
     'validation': 10000,
 }
 
@@ -107,7 +107,7 @@ def preprocess_image(image, is_training):
   return image
 
 
-def input_fn(is_training, data_dir, batch_size, num_epochs=1, num_gpus=None):
+def input_fn(is_training, data_dir, batch_size, num_epochs=250, num_gpus=None):
   """Input_fn using the tf.data input pipeline for CIFAR-10 dataset.
 
   Args:
@@ -231,8 +231,8 @@ def define_cifar_flags():
   flags_core.set_defaults(data_dir='data/cifar10_data',
                           model_dir='data/cifar10_model',
                           resnet_size='32',
-                          train_epochs=1,
-                          epochs_between_evals=1,
+                          train_epochs=250,
+                          epochs_between_evals=10,
                           batch_size=128)
 
 
