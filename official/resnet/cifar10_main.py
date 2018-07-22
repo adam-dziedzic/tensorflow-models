@@ -39,7 +39,7 @@ _NUM_CLASSES = 10
 _NUM_DATA_FILES = 5
 
 _NUM_IMAGES = {
-    'train': 50000,
+    'train': 5000,  # 'train': 50000 - to train on all of the images
     'validation': 10000,
 }
 
@@ -228,11 +228,11 @@ def cifar10_model_fn(features, labels, mode, params):
 def define_cifar_flags():
   resnet_run_loop.define_resnet_flags()
   flags.adopt_module_key_flags(resnet_run_loop)
-  flags_core.set_defaults(data_dir='/tmp/cifar10_data',
-                          model_dir='/tmp/cifar10_model',
+  flags_core.set_defaults(data_dir='data/cifar10_data',
+                          model_dir='data/cifar10_model',
                           resnet_size='32',
-                          train_epochs=250,
-                          epochs_between_evals=10,
+                          train_epochs=1,
+                          epochs_between_evals=1,
                           batch_size=128)
 
 
