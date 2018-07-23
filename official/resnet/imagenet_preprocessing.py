@@ -224,7 +224,8 @@ def _resize_image(image, height, width):
 
 
 def preprocess_image(image_buffer, bbox, output_height, output_width,
-                     num_channels, is_training=False):
+                     num_channels, is_training=False,
+                     data_format="channels_last"):
   """Preprocesses the given image.
 
   Preprocessing includes decoding, cropping, and resizing for both training
@@ -241,6 +242,7 @@ def preprocess_image(image_buffer, bbox, output_height, output_width,
     num_channels: Integer depth of the image buffer for decoding.
     is_training: `True` if we're preprocessing the image for training and
       `False` otherwise.
+    data_format: The format of the data 'channels_last' or 'channels_first'.
 
   Returns:
     A preprocessed image.
@@ -257,4 +259,9 @@ def preprocess_image(image_buffer, bbox, output_height, output_width,
 
   image.set_shape([output_height, output_width, num_channels])
 
-  return _mean_image_subtraction(image, _CHANNEL_MEANS, num_channels)
+  image = _mean_image_subtraction(image, _CHANNEL_MEANS, num_channels)
+
+  if data_format == "channels_first":
+    image = tf.transpose(image, [2, 0, 1])
+
+  return image

@@ -141,9 +141,10 @@ class Model(object):
         self.resnet_size = resnet_size
 
         if not data_format:
-            data_format = (
-                'channels_first' if tf.test.is_built_with_cuda() else
-                'channels_last')
+            # data_format = (
+            #     'channels_first' if tf.test.is_built_with_cuda() else
+            #     'channels_last')
+            data_format = "channels_last"  # this is the default format in tf
 
         self.resnet_version = resnet_version
         if resnet_version not in (1, 2):
@@ -252,13 +253,13 @@ class Model(object):
         """
 
         with self._model_variable_scope('resnet_model'):
-            if self.data_format == 'channels_first':
-                # Convert the inputs from channels_last (NHWC) to
-                # channels_first (NCHW).
-                # This provides a large performance boost on GPU. See
-                # https://www.tensorflow.org/performance/performance_guide#
-                # data_formats
-                inputs = tf.transpose(inputs, [0, 3, 1, 2])
+            # if self.data_format == 'channels_first':
+            #     # Convert the inputs from channels_last (NHWC) to
+            #     # channels_first (NCHW).
+            #     # This provides a large performance boost on GPU. See
+            #     # https://www.tensorflow.org/performance/performance_guide#
+            #     # data_formats
+            #     inputs = tf.transpose(inputs, [0, 3, 1, 2])
 
             with self._model_variable_scope('initial_conv2d'):
                 inputs = self.conv2d_fixed_padding(

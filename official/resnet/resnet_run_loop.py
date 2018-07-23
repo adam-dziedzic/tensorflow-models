@@ -44,7 +44,8 @@ from official.utils.misc import model_helpers
 ################################################################################
 def process_record_dataset(dataset, is_training, batch_size, shuffle_buffer,
                            parse_record_fn, num_epochs=1, num_gpus=None,
-                           examples_per_epoch=None):
+                           examples_per_epoch=None,
+                           data_format="channels_last"):
   """Given a Dataset with raw records, return an iterator over the records.
 
   Args:
@@ -59,6 +60,7 @@ def process_record_dataset(dataset, is_training, batch_size, shuffle_buffer,
     num_epochs: The number of epochs to repeat the dataset.
     num_gpus: The number of gpus used for training.
     examples_per_epoch: The number of examples in an epoch.
+    data_format: The format of the data: 'channels_last' or 'channels_first'.
 
   Returns:
     Dataset of (image, label) pairs ready for iteration.
@@ -91,7 +93,7 @@ def process_record_dataset(dataset, is_training, batch_size, shuffle_buffer,
   # batch_size is almost always much greater than the number of CPU cores.
   dataset = dataset.apply(
       tf.contrib.data.map_and_batch(
-          lambda value: parse_record_fn(value, is_training),
+          lambda value: parse_record_fn(value, is_training, data_format),
           batch_size=batch_size,
           num_parallel_batches=1,
           drop_remainder=False))
@@ -396,7 +398,8 @@ def resnet_main(
         batch_size=distribution_utils.per_device_batch_size(
             flags_obj.batch_size, flags_core.get_num_gpus(flags_obj)),
         num_epochs=flags_obj.epochs_between_evals,
-        num_gpus=flags_core.get_num_gpus(flags_obj))
+        num_gpus=flags_core.get_num_gpus(flags_obj),
+        data_format=flags_obj.data_format)
 
   def input_fn_eval():
     return input_function(
