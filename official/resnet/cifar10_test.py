@@ -76,16 +76,18 @@ class BaseTest(tf.test.TestCase):
         for pixel in row:
           self.assertAllClose(pixel, np.array([-1.225, 0., 1.225]), rtol=1e-3)
 
-  def cifar10_model_fn_helper(self, mode, resnet_version, dtype):
+  def cifar10_model_fn_helper(self, mode, resnet_version, dtype,
+                              data_format='channels_last'):
     input_fn = cifar10_main.get_synth_input_fn()
-    dataset = input_fn(True, '', _BATCH_SIZE)
+    dataset = input_fn(is_training=True, data_dir='', batch_size=_BATCH_SIZE,
+                       data_format=data_format)
     iterator = dataset.make_one_shot_iterator()
     features, labels = iterator.get_next()
     spec = cifar10_main.cifar10_model_fn(
         features, labels, mode, {
             'dtype': dtype,
             'resnet_size': 32,
-            'data_format': 'channels_last',
+            'data_format': data_format,
             'batch_size': _BATCH_SIZE,
             'resnet_version': resnet_version,
             'loss_scale': 128 if dtype == tf.float16 else 1,
@@ -117,6 +119,10 @@ class BaseTest(tf.test.TestCase):
   def test_cifar10_model_fn_trainmode__v2(self):
     self.cifar10_model_fn_helper(tf.estimator.ModeKeys.TRAIN, resnet_version=2,
                                  dtype=tf.float32)
+
+  def test_cifar10_model_fn_trainmode__v2_channels_first(self):
+    self.cifar10_model_fn_helper(tf.estimator.ModeKeys.TRAIN, resnet_version=2,
+                                 dtype=tf.float32, data_format="channels_first")
 
   def test_cifar10_model_fn_eval_mode_v1(self):
     self.cifar10_model_fn_helper(tf.estimator.ModeKeys.EVAL, resnet_version=1,

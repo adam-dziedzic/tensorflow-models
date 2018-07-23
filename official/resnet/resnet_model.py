@@ -383,7 +383,7 @@ class Model(object):
             spatial_weight = tf.transpose(spatial_weight, [2, 3, 0, 1])
 
             out = tf.nn.conv2d(inputs, spatial_weight, strides=strides,
-                               padding=padding)
+                               padding=padding, data_format=data_format)
 
             if use_bias:
                 with self._model_variable_scope('spec_conv_bias'):

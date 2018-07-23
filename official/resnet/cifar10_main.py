@@ -44,7 +44,7 @@ _NUM_IMAGES = {
 }
 
 DATASET_NAME = 'CIFAR-10'
-_DEFAULT_DATA_FORMAT = "channels_last"
+_DEFAULT_DATA_FORMAT = "channels_first"  # "channels_last" or "channels_last"
 
 
 ###############################################################################
@@ -144,7 +144,8 @@ def input_fn(is_training, data_dir, batch_size, num_epochs=250, num_gpus=None,
 
 def get_synth_input_fn():
     return resnet_run_loop.get_synth_input_fn(
-        _HEIGHT, _WIDTH, _NUM_CHANNELS, _NUM_CLASSES)
+        height=_HEIGHT, width=_WIDTH, num_channels=_NUM_CHANNELS,
+        num_classes=_NUM_CLASSES, data_format="channels_last")
 
 
 ###############################################################################
@@ -197,7 +198,12 @@ class Cifar10Model(resnet_model.Model):
 
 def cifar10_model_fn(features, labels, mode, params):
     """Model function for CIFAR-10."""
-    features = tf.reshape(features, [-1, _HEIGHT, _WIDTH, _NUM_CHANNELS])
+    data_format = params['data_format']
+    if data_format == "channels_first":
+        features = tf.reshape(features, [-1, _NUM_CHANNELS, _HEIGHT, _WIDTH])
+    else:
+        # for 'channels_last', it is also a default data format
+        features = tf.reshape(features, [-1, _HEIGHT, _WIDTH, _NUM_CHANNELS])
 
     learning_rate_fn = resnet_run_loop.learning_rate_with_decay(
         batch_size=params['batch_size'], batch_denom=128,
@@ -225,7 +231,7 @@ def cifar10_model_fn(features, labels, mode, params):
         weight_decay=weight_decay,
         learning_rate_fn=learning_rate_fn,
         momentum=0.9,
-        data_format=params['data_format'],
+        data_format=data_format,
         # data_format="channels_last",
         resnet_version=params['resnet_version'],
         loss_scale=params['loss_scale'],
