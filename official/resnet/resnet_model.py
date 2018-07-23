@@ -311,42 +311,54 @@ class Model(object):
             inputs = tf.identity(inputs, 'final_dense')
             return inputs
 
-    def conv2d_spectral_param(self, inputs, in_channel, filters, kernel_size,
-                              strides, padding, use_bias=False):
+    def _glorot_sample(self, kernel_size, in_channel, filters):
+        """
+        The same definition of the glorot initialization as in tensorflow but
+        for not a variable but for a separate sample.
+
+        :param in_channel: Number of input channels for an image (typically 3
+          for RGB or 1 for a gray scale image).
+        :param filters: Number of filters in a layer
+        :return: numpy array with glorot initialized values
+        """
+        limit = np.sqrt(6 / (in_channel + filters))
+        return np.random.uniform(
+            low=-limit, high=limit,
+            size=(in_channel, filters, kernel_size, kernel_size))
+
+    def conv2d_spectral_param(self, inputs, filters, kernel_size, strides,
+                              padding, use_bias=False):
         """
         A convolutional layer with spectrally-parameterized weights.
 
         :param inputs: Should be a 4D array like:
                             (batch_num, channel_num, img_len, img_len)
         :param in_channel: The number of channels
-        :param filters: number of filters required
-        :param kernel_size: kernel size
-        :param random_seed: random seed
-        :param data_format: image should be with CHANNEL LAST: NHWC
+        :param filters: Number of filters required
+        :param kernel_size: Kernel size
+        :param random_seed: Random seed
+        :param data_format: Image should be with CHANNEL LAST: NHWC
         :param index: The layer index used for naming
         """
         if self.data_format == 'channels_last':
-            in_channel = inputs.shape[3]
+            in_channel = inputs.shape[3].value
+            strides = [1, strides, strides, 1]
+            data_format = "NHWC"
         elif self.data_format == 'channels_first':
-            in_channel = inputs.shape[1]
-
-        data_format = "NCHW" if self.data_format == "channels_first" else "NHWC"
-
-        def _glorot_sample(kernel_size, n_in, n_out):
-            limit = np.sqrt(6 / (n_in + n_out))
-            return np.random.uniform(
-                low=-limit, high=limit,
-                size=(n_in, n_out, kernel_size, kernel_size))
+            in_channel = inputs.shape[1].value
+            strides = [1, 1, strides, strides]
+            data_format = "NCHW"
 
         with self._model_variable_scope('spec_conv_layer'):
             with self._model_variable_scope('spec_conv_kernel'):
-                samp = _glorot_sample(kernel_size, in_channel, filters)
+                glorot_sample = self._glorot_sample(kernel_size, in_channel,
+                                                    filters)
                 """
                 tf.fft2d: Computes the 2-dimensional discrete Fourier transform 
                 over the inner-most 2 dimensions of input.
                 """
                 # shape channel_in, channel_out, kernel_size, kernel_size
-                spectral_weight_init = tf.fft2d(samp)
+                spectral_weight_init = tf.fft2d(glorot_sample)
 
                 real_init = tf.get_variable(
                     name='real', initializer=tf.real(spectral_weight_init))
@@ -518,7 +530,7 @@ class Model(object):
         return inputs + shortcut
 
     def _bottleneck_block_v1(self, inputs, filters, training,
-                             projection_shortcut, strides, data_format):
+                             projection_shortcut, strides):
         """A single block for ResNet v1, with a bottleneck.
 
         Similar to _building_block_v1(), except using the "bottleneck" blocks
@@ -538,7 +550,6 @@ class Model(object):
             (typically a 1x1 convolution when downsampling the input).
           strides: The block's stride. If greater than 1, this block will
             ultimately downsample the input.
-          data_format: The input format ('channels_last' or 'channels_first').
 
         Returns:
           The output tensor of the block; shape should match inputs.
@@ -553,26 +564,26 @@ class Model(object):
         with self._model_variable_scope("first_conv"):
             inputs = self.conv2d_fixed_padding(
                 inputs=inputs, filters=filters, kernel_size=1, strides=1)
-            inputs = batch_norm(inputs, training, data_format)
+            inputs = batch_norm(inputs, training, data_format=self.data_format)
             inputs = tf.nn.relu(inputs)
 
         with self._model_variable_scope("second_conv"):
             inputs = self.conv2d_fixed_padding(
                 inputs=inputs, filters=filters, kernel_size=3, strides=strides)
-            inputs = batch_norm(inputs, training, data_format)
+            inputs = batch_norm(inputs, training, data_format=self.data_format)
             inputs = tf.nn.relu(inputs)
 
         with self._model_variable_scope("third_conv"):
             inputs = self.conv2d_fixed_padding(
                 inputs=inputs, filters=4 * filters, kernel_size=1, strides=1)
-            inputs = batch_norm(inputs, training, data_format)
+            inputs = batch_norm(inputs, training, data_format=self.data_format)
             inputs += shortcut
             inputs = tf.nn.relu(inputs)
 
         return inputs
 
     def _bottleneck_block_v2(self, inputs, filters, training,
-                             projection_shortcut, strides, data_format):
+                             projection_shortcut, strides):
         """A single block for ResNet v2, without a bottleneck.
 
         Similar to _building_block_v2(), except using the "bottleneck" blocks
@@ -598,13 +609,12 @@ class Model(object):
             (typically a 1x1 convolution when downsampling the input).
           strides: The block's stride. If greater than 1, this block will
             ultimately downsample the input.
-          data_format: The input format ('channels_last' or 'channels_first').
 
         Returns:
           The output tensor of the block; shape should match inputs.
         """
         shortcut = inputs
-        inputs = batch_norm(inputs, training, data_format)
+        inputs = batch_norm(inputs, training, data_format=self.data_format)
         inputs = tf.nn.relu(inputs)
 
         # The projection shortcut should come after the first batch norm and
@@ -616,13 +626,13 @@ class Model(object):
         with self._model_variable_scope("first_conv"):
             inputs = self.conv2d_fixed_padding(
                 inputs=inputs, filters=filters, kernel_size=1, strides=1)
-            inputs = batch_norm(inputs, training, data_format)
+            inputs = batch_norm(inputs, training, data_format=self.data_format)
             inputs = tf.nn.relu(inputs)
 
         with self._model_variable_scope("second_conv"):
             inputs = self.conv2d_fixed_padding(
                 inputs=inputs, filters=filters, kernel_size=3, strides=strides)
-            inputs = batch_norm(inputs, training, data_format)
+            inputs = batch_norm(inputs, training, data_format=self.data_format)
             inputs = tf.nn.relu(inputs)
 
         with self._model_variable_scope("third_conv"):
