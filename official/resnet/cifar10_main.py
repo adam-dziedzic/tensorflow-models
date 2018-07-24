@@ -210,7 +210,7 @@ def cifar10_model_fn(features, labels, mode, params):
         num_images=_NUM_IMAGES['train'], boundary_epochs=[100, 150, 200],
         decay_rates=[1, 0.1, 0.01, 0.001])
 
-    # We use a weight decay of 0.0002, which performs better
+    # We use a weight decay of 0.0002 (slightly larger), which performs better
     # than the 0.0001 that was originally suggested.
     weight_decay = 2e-4
 

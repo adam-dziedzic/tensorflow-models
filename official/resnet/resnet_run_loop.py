@@ -217,8 +217,8 @@ def resnet_model_fn(features, labels, mode, model_class,
         If set to None, the format is dependent on whether a GPU is available.
       resnet_version: Integer representing which version of the ResNet network to
         use. See README for details. Valid values: [1, 2]
-      loss_scale: The factor to scale the loss for numerical stability. A detailed
-        summary is present in the arg parser help text.
+      loss_scale: The factor to scale the loss for numerical stability.
+        A detailed summary is present in the arg parser help text.
       loss_filter_fn: function that takes a string variable name and returns
         True if the var should be included in loss calculation, and False
         otherwise. If None, batch_normalization variables will be excluded
@@ -231,6 +231,8 @@ def resnet_model_fn(features, labels, mode, model_class,
     """
 
     # Generate a summary node for the images
+    # `tensor` features which must be 4-D with shape `[batch_size, height,
+    # width, channels]`
     tf.summary.image('images', features, max_outputs=6)
 
     features = tf.cast(features, dtype)
@@ -416,7 +418,14 @@ def resnet_main(
             num_gpus=flags_core.get_num_gpus(flags_obj),
             data_format=flags_obj.data_format)
 
-    def input_fn_eval():
+    def input_fn_eval_train():
+        return input_function(
+            is_training=True, data_dir=flags_obj.data_dir,
+            batch_size=distribution_utils.per_device_batch_size(
+                flags_obj.batch_size, flags_core.get_num_gpus(flags_obj)),
+            num_epochs=1)
+
+    def input_fn_eval_test():
         return input_function(
             is_training=False, data_dir=flags_obj.data_dir,
             batch_size=distribution_utils.per_device_batch_size(
@@ -440,9 +449,14 @@ def resnet_main(
         # eval (which is generally unimportant in those circumstances) to terminate.
         # Note that eval will run for max_train_steps each loop, regardless of the
         # global_step count.
-        eval_results = classifier.evaluate(input_fn=input_fn_eval,
+        eval_results = classifier.evaluate(input_fn=input_fn_eval_test,
                                            steps=flags_obj.max_train_steps)
+        tf.logging.info('Test evaluation')
+        benchmark_logger.log_evaluation_result(eval_results)
 
+        eval_results = classifier.evaluate(input_fn=input_fn_eval_train,
+                                           steps=flags_obj.max_train_steps)
+        tf.logging.info('Train evaluation')
         benchmark_logger.log_evaluation_result(eval_results)
 
         if model_helpers.past_stop_threshold(
