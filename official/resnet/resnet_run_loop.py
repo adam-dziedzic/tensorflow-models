@@ -239,7 +239,7 @@ def resnet_model_fn(features, labels, mode, model_class,
     features = tf.cast(features, dtype)
 
     model = model_class(resnet_size, data_format, resnet_version=resnet_version,
-                        dtype=dtype)
+                        dtype=dtype, conv_type=conv_type)
 
     logits = model(features, mode == tf.estimator.ModeKeys.TRAIN)
 
@@ -387,7 +387,8 @@ def resnet_main(
             'batch_size': flags_obj.batch_size,
             'resnet_version': int(flags_obj.resnet_version),
             'loss_scale': flags_core.get_loss_scale(flags_obj),
-            'dtype': flags_core.get_tf_dtype(flags_obj)
+            'dtype': flags_core.get_tf_dtype(flags_obj),
+            'conv_type': resnet_model.ConvType[flags_obj.conv_type]
         })
 
     run_params = {
@@ -397,6 +398,7 @@ def resnet_main(
         'resnet_version': flags_obj.resnet_version,
         'synthetic_data': flags_obj.use_synthetic_data,
         'train_epochs': flags_obj.train_epochs,
+        'conv_type': resnet_model.ConvType[flags_obj.conv_type]
     }
     if flags_obj.use_synthetic_data:
         dataset_name = dataset_name + '-synthetic'

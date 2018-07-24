@@ -157,7 +157,8 @@ class Cifar10Model(resnet_model.Model):
     def __init__(self, resnet_size, data_format=_DEFAULT_DATA_FORMAT,
                  num_classes=_NUM_CLASSES,
                  resnet_version=resnet_model.DEFAULT_VERSION,
-                 dtype=resnet_model.DEFAULT_DTYPE):
+                 dtype=resnet_model.DEFAULT_DTYPE,
+                 conv_type=resnet_model.DEFAULT_CONV_TYPE):
         """These are the parameters that work for CIFAR-10 data.
 
         Args:
@@ -192,7 +193,8 @@ class Cifar10Model(resnet_model.Model):
             final_size=64,
             resnet_version=resnet_version,
             data_format=data_format,
-            dtype=dtype
+            dtype=dtype,
+            conv_type=conv_type
         )
 
 
@@ -237,7 +239,7 @@ def cifar10_model_fn(features, labels, mode, params):
         loss_scale=params['loss_scale'],
         loss_filter_fn=loss_filter_fn,
         dtype=params['dtype'],
-        conv_type=resnet_model.ConvType[params['conv_type']]
+        conv_type=params['conv_type']
     )
 
 
