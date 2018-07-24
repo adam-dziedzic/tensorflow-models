@@ -191,7 +191,8 @@ def learning_rate_with_decay(
 def resnet_model_fn(features, labels, mode, model_class,
                     resnet_size, weight_decay, learning_rate_fn, momentum,
                     data_format, resnet_version, loss_scale,
-                    loss_filter_fn=None, dtype=resnet_model.DEFAULT_DTYPE):
+                    loss_filter_fn=None, dtype=resnet_model.DEFAULT_DTYPE,
+                    conv_type=resnet_model.DEFAULT_CONV_TYPE):
     """Shared functionality for different resnet model_fns.
 
     Initializes the ResnetModel representing the model layers
@@ -483,6 +484,15 @@ def define_resnet_flags(resnet_size_choices=None):
         enum_values=['1', '2'],
         help=flags_core.help_wrap(
             'Version of ResNet. (1 or 2) See README.md for details.'))
+
+    flags.DEFINE_enum(
+        name='conv_type', short_name='ct', default='SPECTRAL_PARAM',
+        enum_values=[conv_type.name for conv_type in resnet_model.ConvType],
+        help=flags_core.help_wrap(
+            'Version of the convolution used. STANDARD is with default '
+            'convolutionaly layer. SPECTRAL_PARAM initializes parameters in the'
+            'frequency domain. SPATIAL_PARAM similar to the spectral version'
+            ' but initializes parameters in the spatial domain.'))
 
     choice_kwargs = dict(
         name='resnet_size', short_name='rs', default='50',
