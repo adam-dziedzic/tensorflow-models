@@ -398,12 +398,19 @@ def resnet_main(
         num_epochs=flags_obj.epochs_between_evals,
         num_gpus=flags_core.get_num_gpus(flags_obj))
 
-  def input_fn_eval():
-    return input_function(
-        is_training=False, data_dir=flags_obj.data_dir,
-        batch_size=distribution_utils.per_device_batch_size(
-            flags_obj.batch_size, flags_core.get_num_gpus(flags_obj)),
-        num_epochs=1)
+  def input_fn_eval_train():
+      return input_function(
+          is_training=True, data_dir=flags_obj.data_dir,
+          batch_size=distribution_utils.per_device_batch_size(
+              flags_obj.batch_size, flags_core.get_num_gpus(flags_obj)),
+          num_epochs=1)
+
+  def input_fn_eval_test():
+      return input_function(
+          is_training=False, data_dir=flags_obj.data_dir,
+          batch_size=distribution_utils.per_device_batch_size(
+              flags_obj.batch_size, flags_core.get_num_gpus(flags_obj)),
+          num_epochs=1)
 
   total_training_cycle = (flags_obj.train_epochs //
                           flags_obj.epochs_between_evals)
@@ -422,9 +429,14 @@ def resnet_main(
     # eval (which is generally unimportant in those circumstances) to terminate.
     # Note that eval will run for max_train_steps each loop, regardless of the
     # global_step count.
-    eval_results = classifier.evaluate(input_fn=input_fn_eval,
+    eval_results = classifier.evaluate(input_fn=input_fn_eval_test,
                                        steps=flags_obj.max_train_steps)
+    tf.logging.info('Test evaluation')
+    benchmark_logger.log_evaluation_result(eval_results)
 
+    eval_results = classifier.evaluate(input_fn=input_fn_eval_train,
+                                       steps=flags_obj.max_train_steps)
+    tf.logging.info('Train evaluation')
     benchmark_logger.log_evaluation_result(eval_results)
 
     if model_helpers.past_stop_threshold(
