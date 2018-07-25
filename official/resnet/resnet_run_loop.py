@@ -303,7 +303,7 @@ def resnet_model_fn(features, labels, mode, model_class,
         tf.identity(learning_rate, name='learning_rate')
         tf.summary.scalar('learning_rate', learning_rate)
 
-        tf.logging.INFO("optimizer_type: " + str(optimizer_type))
+        tf.logging.INFO("optimizer_type: " + optimizer_type.name)
         if optimizer_type is OPTIMIZER.Momentum:
             optimizer = tf.train.MomentumOptimizer(
                 learning_rate=learning_rate,
