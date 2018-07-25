@@ -202,7 +202,7 @@ def resnet_model_fn(features, labels, mode, model_class,
                     data_format, resnet_version, loss_scale,
                     loss_filter_fn=None, dtype=resnet_model.DEFAULT_DTYPE,
                     conv_type=resnet_model.DEFAULT_CONV_TYPE,
-                    optimizer=DEFAULT_OPTIMIZER):
+                    optimizer_type=DEFAULT_OPTIMIZER):
     """Shared functionality for different resnet model_fns.
 
     Initializes the ResnetModel representing the model layers
@@ -304,19 +304,19 @@ def resnet_model_fn(features, labels, mode, model_class,
         tf.identity(learning_rate, name='learning_rate')
         tf.summary.scalar('learning_rate', learning_rate)
 
-        if optimizer is OPTIMIZER.Momentum:
-            tf.logging.INFO("optimizer: " + optimizer.name)
+        if optimizer_type is OPTIMIZER.Momentum:
             optimizer = tf.train.MomentumOptimizer(
                 learning_rate=learning_rate,
                 momentum=momentum
             )
-        elif optimizer is OPTIMIZER.Adam:
-            tf.logging.INFO("optimizer: " + optimizer.name)
+            tf.logging.INFO("optimizer: " + optimizer)
+        elif optimizer_type is OPTIMIZER.Adam:
             optimizer = tf.train.AdamOptimizer()
+            tf.logging.INFO("optimizer: " + optimizer)
         else:
             raise ValueError(
-                "Unknown optimizer, please choose from: " + \
-                ",".join([optimizer.name for optimizer in OPTIMIZER]))
+                "Unknown optimizer type, please choose from: " + \
+                ",".join([optimizer_type.name for optimizer_type in OPTIMIZER]))
 
 
         if loss_scale != 1:
