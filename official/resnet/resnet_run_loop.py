@@ -40,6 +40,15 @@ from official.utils.misc import model_helpers
 # pylint: enable=g-bad-import-order
 
 
+from enum import Enum
+
+class OPTIMIZER(Enum):
+    Momentum = 1
+    Adam = 2
+
+DEFAULT_OPTIMIZER=OPTIMIZER.Adam
+
+
 ################################################################################
 # Functions for input processing.
 ################################################################################
@@ -192,7 +201,8 @@ def resnet_model_fn(features, labels, mode, model_class,
                     resnet_size, weight_decay, learning_rate_fn, momentum,
                     data_format, resnet_version, loss_scale,
                     loss_filter_fn=None, dtype=resnet_model.DEFAULT_DTYPE,
-                    conv_type=resnet_model.DEFAULT_CONV_TYPE):
+                    conv_type=resnet_model.DEFAULT_CONV_TYPE,
+                    optimizer=DEFAULT_OPTIMIZER):
     """Shared functionality for different resnet model_fns.
 
     Initializes the ResnetModel representing the model layers
@@ -294,10 +304,20 @@ def resnet_model_fn(features, labels, mode, model_class,
         tf.identity(learning_rate, name='learning_rate')
         tf.summary.scalar('learning_rate', learning_rate)
 
-        optimizer = tf.train.MomentumOptimizer(
-            learning_rate=learning_rate,
-            momentum=momentum
-        )
+        if optimizer is OPTIMIZER.Momentum:
+            tf.logging.INFO("optimizer: " + optimizer.name)
+            optimizer = tf.train.MomentumOptimizer(
+                learning_rate=learning_rate,
+                momentum=momentum
+            )
+        elif optimizer is OPTIMIZER.Adam:
+            tf.logging.INFO("optimizer: " + optimizer.name)
+            optimizer = tf.train.AdamOptimizer()
+        else:
+            raise ValueError(
+                "Unknown optimizer, please choose from: " + \
+                ",".join([optimizer.name for optimizer in OPTIMIZER]))
+
 
         if loss_scale != 1:
             # When computing fp16 gradients, often intermediate tensor values are
