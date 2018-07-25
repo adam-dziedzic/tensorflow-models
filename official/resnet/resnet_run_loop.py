@@ -40,12 +40,12 @@ from official.utils.misc import model_helpers
 
 # pylint: enable=g-bad-import-order
 
-class OPTIMIZER(Enum):
+class OPTIMIZER_TYPE(Enum):
     Momentum = 1
     Adam = 2
 
 
-DEFAULT_OPTIMIZER = OPTIMIZER.Adam
+DEFAULT_OPTIMIZER = OPTIMIZER_TYPE.Adam
 
 
 ################################################################################
@@ -303,19 +303,19 @@ def resnet_model_fn(features, labels, mode, model_class,
         tf.identity(learning_rate, name='learning_rate')
         tf.summary.scalar('learning_rate', learning_rate)
 
-        tf.logging.INFO("optimizer_type: " + optimizer_type.name)
-        if optimizer_type is OPTIMIZER.Momentum:
+        tf.logging.info("optimizer_type: " + optimizer_type.name)
+        if optimizer_type is OPTIMIZER_TYPE.Momentum:
             optimizer = tf.train.MomentumOptimizer(
                 learning_rate=learning_rate,
                 momentum=momentum
             )
-        elif optimizer_type is OPTIMIZER.Adam:
+        elif optimizer_type is OPTIMIZER_TYPE.Adam:
             optimizer = tf.train.AdamOptimizer()
         else:
             raise ValueError(
                 "Unsupported optimizer type: " + str(optimizer_type) +
                 ". Please choose from: " + ",".join(
-                    [optimizer_type.name for optimizer_type in OPTIMIZER]))
+                    [optimizer_type.name for optimizer_type in OPTIMIZER_TYPE]))
 
         if loss_scale != 1:
             # When computing fp16 gradients, often intermediate tensor values are
