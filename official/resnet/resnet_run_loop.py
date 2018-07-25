@@ -309,10 +309,10 @@ def resnet_model_fn(features, labels, mode, model_class,
                 learning_rate=learning_rate,
                 momentum=momentum
             )
-            tf.logging.INFO("optimizer: " + optimizer)
+            tf.logging.INFO("optimizer: " + str(optimizer))
         elif optimizer_type is OPTIMIZER.Adam:
             optimizer = tf.train.AdamOptimizer()
-            tf.logging.INFO("optimizer: " + optimizer)
+            tf.logging.INFO("optimizer: " + str(optimizer))
         else:
             raise ValueError(
                 "Unknown optimizer type, please choose from: " + \
