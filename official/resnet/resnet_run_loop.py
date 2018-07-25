@@ -27,6 +27,7 @@ import os
 import tensorflow as tf
 # pylint: disable=g-bad-import-order
 from absl import flags
+from enum import Enum
 
 from official.resnet import resnet_model
 from official.utils.export import export
@@ -39,14 +40,12 @@ from official.utils.misc import model_helpers
 
 # pylint: enable=g-bad-import-order
 
-
-from enum import Enum
-
 class OPTIMIZER(Enum):
     Momentum = 1
     Adam = 2
 
-DEFAULT_OPTIMIZER=OPTIMIZER.Adam
+
+DEFAULT_OPTIMIZER = OPTIMIZER.Adam
 
 
 ################################################################################
@@ -304,20 +303,19 @@ def resnet_model_fn(features, labels, mode, model_class,
         tf.identity(learning_rate, name='learning_rate')
         tf.summary.scalar('learning_rate', learning_rate)
 
+        tf.logging.INFO("optimizer_type: " + str(optimizer_type))
         if optimizer_type is OPTIMIZER.Momentum:
             optimizer = tf.train.MomentumOptimizer(
                 learning_rate=learning_rate,
                 momentum=momentum
             )
-            tf.logging.INFO("optimizer: " + str(optimizer))
         elif optimizer_type is OPTIMIZER.Adam:
             optimizer = tf.train.AdamOptimizer()
-            tf.logging.INFO("optimizer: " + str(optimizer))
         else:
             raise ValueError(
-                "Unknown optimizer type, please choose from: " + \
-                ",".join([optimizer_type.name for optimizer_type in OPTIMIZER]))
-
+                "Unknown optimizer type: " + str(optimizer_type) +
+                ". Please choose from: " + ",".join(
+                    [optimizer_type.name for optimizer_type in OPTIMIZER]))
 
         if loss_scale != 1:
             # When computing fp16 gradients, often intermediate tensor values are
