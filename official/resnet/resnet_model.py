@@ -420,7 +420,7 @@ class Model(object):
             inputs = fixed_padding(inputs, kernel_size, self.data_format)
 
         if self.conv_type is ConvType.STANDARD:
-            tf.logging.info("conv_type: " + self.conv_type.name)
+            # tf.logging.info("conv_type: " + self.conv_type.name)
             return tf.layers.conv2d(
                 inputs=inputs, filters=filters, kernel_size=kernel_size,
                 strides=strides,
@@ -428,7 +428,7 @@ class Model(object):
                 kernel_initializer=tf.variance_scaling_initializer(),
                 data_format=self.data_format)
         elif self.conv_type is ConvType.SPECTRAL_PARAM:
-            tf.logging.info("conv_type: " + self.conv_type.name)
+            # tf.logging.info("conv_type: " + self.conv_type.name)
             return self.conv2d_spectral_param(
                 inputs=inputs, filters=filters, kernel_size=kernel_size,
                 strides=strides, padding=('SAME' if strides == 1 else 'VALID'),
