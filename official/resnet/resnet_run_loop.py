@@ -313,7 +313,7 @@ def resnet_model_fn(features, labels, mode, model_class,
             optimizer = tf.train.AdamOptimizer()
         else:
             raise ValueError(
-                "Unknown optimizer type: " + str(optimizer_type) +
+                "Unsupported optimizer type: " + str(optimizer_type) +
                 ". Please choose from: " + ",".join(
                     [optimizer_type.name for optimizer_type in OPTIMIZER]))
 
