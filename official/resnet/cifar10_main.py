@@ -158,7 +158,8 @@ class Cifar10Model(resnet_model.Model):
                  num_classes=_NUM_CLASSES,
                  resnet_version=resnet_model.DEFAULT_VERSION,
                  dtype=resnet_model.DEFAULT_DTYPE,
-                 conv_type=resnet_model.DEFAULT_CONV_TYPE):
+                 conv_type=resnet_model.DEFAULT_CONV_TYPE,
+                 optimizer_type=resnet_run_loop.DEFAULT_OPTIMIZER):
         """These are the parameters that work for CIFAR-10 data.
 
         Args:
@@ -170,6 +171,8 @@ class Cifar10Model(resnet_model.Model):
           resnet_version: Integer representing which version of the ResNet network
           to use. See README for details. Valid values: [1, 2]
           dtype: The TensorFlow dtype to use for calculations.
+          conv_type: The type of convolution.
+          optimizer_type: The type of convolution.
 
         Raises:
           ValueError: if invalid resnet_size is chosen
@@ -239,7 +242,9 @@ def cifar10_model_fn(features, labels, mode, params):
         loss_scale=params['loss_scale'],
         loss_filter_fn=loss_filter_fn,
         dtype=params['dtype'],
-        conv_type=params['conv_type']
+        conv_type=params['conv_type'],
+        optimizer_type=params['optimizer_type'],
+        run_type=params['run_type']
     )
 
 
