@@ -210,10 +210,21 @@ def cifar10_model_fn(features, labels, mode, params):
         # for 'channels_last', it is also a default data format
         features = tf.reshape(features, [-1, _HEIGHT, _WIDTH, _NUM_CHANNELS])
 
+    # we start from learning rate 0.1 for the Momentum optimizer
+    batch_denom = params['batch_size']
+    boundary_epochs = [100, 150, 200]
+    decay_rates = [1, 0.1, 0.01, 0.001]
+
+    if params['optimizer_type'] is resnet_run_loop.OptimizerType.ADAM:
+        # we start from the learning rate 0.01 for the Adam optimizer
+        batch_denom = batch_denom * 10
+        boundary_epochs = [10, 100, 150, 200]
+        decay_rates = [1, 0.1, 0.1, 0.1, 0.01]
+
     learning_rate_fn = resnet_run_loop.learning_rate_with_decay(
-        batch_size=params['batch_size'], batch_denom=128,
-        num_images=_NUM_IMAGES['train'], boundary_epochs=[100, 150, 200],
-        decay_rates=[1, 0.1, 0.01, 0.001])
+        batch_size=params['batch_size'], batch_denom=batch_denom,
+        num_images=_NUM_IMAGES['train'], boundary_epochs=boundary_epochs,
+        decay_rates=decay_rates)
 
     # We use a weight decay of 0.0002 (slightly larger), which performs better
     # than the 0.0001 that was originally suggested.

@@ -317,7 +317,10 @@ def resnet_model_fn(features, labels, mode, model_class,
                 momentum=momentum
             )
         elif optimizer_type is OptimizerType.ADAM:
-            optimizer = tf.train.AdamOptimizer()
+            optimizer = tf.train.AdamOptimizer(
+                learning_rate=learning_rate,
+                epsilon=0.1
+            )
         else:
             raise ValueError(
                 "Unsupported optimizer type: " + str(optimizer_type) +
