@@ -40,12 +40,18 @@ from official.utils.misc import model_helpers
 
 # pylint: enable=g-bad-import-order
 
-class OPTIMIZER_TYPE(Enum):
-    Momentum = 1
-    Adam = 2
+class OptimizerType(Enum):
+    MOMENTUM = 1
+    ADAM = 2
 
 
-DEFAULT_OPTIMIZER = OPTIMIZER_TYPE.Adam
+class RunType(Enum):
+    TEST = 0
+    DEBUG = 1
+
+
+DEFAULT_OPTIMIZER = OptimizerType.ADAM
+DEFAULT_RUN_TYPE = RunType.TEST
 
 
 ################################################################################
@@ -201,7 +207,8 @@ def resnet_model_fn(features, labels, mode, model_class,
                     data_format, resnet_version, loss_scale,
                     loss_filter_fn=None, dtype=resnet_model.DEFAULT_DTYPE,
                     conv_type=resnet_model.DEFAULT_CONV_TYPE,
-                    optimizer_type=DEFAULT_OPTIMIZER):
+                    optimizer_type=DEFAULT_OPTIMIZER,
+                    run_type=DEFAULT_RUN_TYPE):
     """Shared functionality for different resnet model_fns.
 
     Initializes the ResnetModel representing the model layers
@@ -304,18 +311,21 @@ def resnet_model_fn(features, labels, mode, model_class,
         tf.summary.scalar('learning_rate', learning_rate)
 
         tf.logging.info("optimizer_type: " + optimizer_type.name)
-        if optimizer_type is OPTIMIZER_TYPE.Momentum:
+        if optimizer_type is OptimizerType.MOMENTUM:
             optimizer = tf.train.MomentumOptimizer(
                 learning_rate=learning_rate,
                 momentum=momentum
             )
-        elif optimizer_type is OPTIMIZER_TYPE.Adam:
-            optimizer = tf.train.AdamOptimizer()
+        elif optimizer_type is OptimizerType.ADAM:
+            optimizer = tf.train.AdamOptimizer(
+                learning_rate=learning_rate,
+                epsilon=0.1
+            )
         else:
             raise ValueError(
                 "Unsupported optimizer type: " + str(optimizer_type) +
                 ". Please choose from: " + ",".join(
-                    [optimizer_type.name for optimizer_type in OPTIMIZER_TYPE]))
+                    [optimizer_type.name for optimizer_type in OptimizerType]))
 
         if loss_scale != 1:
             # When computing fp16 gradients, often intermediate tensor values are
@@ -406,7 +416,9 @@ def resnet_main(
             'resnet_version': int(flags_obj.resnet_version),
             'loss_scale': flags_core.get_loss_scale(flags_obj),
             'dtype': flags_core.get_tf_dtype(flags_obj),
-            'conv_type': resnet_model.ConvType[flags_obj.conv_type]
+            'conv_type': resnet_model.ConvType[flags_obj.conv_type],
+            'optimizer_type': OptimizerType[flags_obj.optimizer_type],
+            'run_type': RunType[flags_obj.run_type]
         })
 
     run_params = {
@@ -416,7 +428,9 @@ def resnet_main(
         'resnet_version': flags_obj.resnet_version,
         'synthetic_data': flags_obj.use_synthetic_data,
         'train_epochs': flags_obj.train_epochs,
-        'conv_type': resnet_model.ConvType[flags_obj.conv_type]
+        'conv_type': resnet_model.ConvType[flags_obj.conv_type],
+        'optimizer_type': OptimizerType[flags_obj.optimizer_type],
+        'run_type': RunType[flags_obj.run_type]
     }
     if flags_obj.use_synthetic_data:
         dataset_name = dataset_name + '-synthetic'
@@ -509,9 +523,20 @@ def define_resnet_flags(resnet_size_choices=None):
         enum_values=[conv_type.name for conv_type in resnet_model.ConvType],
         help=flags_core.help_wrap(
             'Version of the convolution used. STANDARD is with default '
-            'convolutionaly layer. SPECTRAL_PARAM initializes parameters in the'
+            'convolutional layer. SPECTRAL_PARAM initializes parameters in the'
             'frequency domain. SPATIAL_PARAM similar to the spectral version'
             ' but initializes parameters in the spatial domain.'))
+
+    flags.DEFINE_enum(
+        name='optimizer_type', short_name='opt', default='ADAM',
+        enum_values=[optimizer_type.name for optimizer_type in OptimizerType],
+        help=flags_core.help_wrap(
+            'Version of the optimizer to use, e.g., ADAM or MOMENTUM'))
+
+    flags.DEFINE_enum(
+        name='run_type', short_name='run', default='TEST',
+        enum_values=[run_type.name for run_type in RunType],
+        help=flags_core.help_wrap('Type of the run: TEST or DEBUG'))
 
     choice_kwargs = dict(
         name='resnet_size', short_name='rs', default='50',
