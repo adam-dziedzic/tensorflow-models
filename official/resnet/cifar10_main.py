@@ -216,10 +216,12 @@ def cifar10_model_fn(features, labels, mode, params):
     decay_rates = [1, 0.1, 0.01, 0.001]
 
     if params['optimizer_type'] is resnet_run_loop.OptimizerType.ADAM:
-        # we start from the learning rate 0.01 for the Adam optimizer
-        batch_denom = batch_denom * 10
-        boundary_epochs = [10, 100, 150, 200]
-        decay_rates = [1, 0.1, 0.1, 0.1, 0.01]
+        # we start from the learning rate 0.001 for the Adam optimizer
+        batch_denom = batch_denom * 100
+        # use the learning rate which is x, 0.1x, 0.01x, ... and so on
+        # change the learning rates for the boundary_epochs
+        boundary_epochs = [10, 150, 200, 300]
+        decay_rates = [1, 0.1, 0.01, 0.001, 0.0001]
 
     learning_rate_fn = resnet_run_loop.learning_rate_with_decay(
         batch_size=params['batch_size'], batch_denom=batch_denom,
