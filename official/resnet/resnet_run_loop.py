@@ -319,7 +319,7 @@ def resnet_model_fn(features, labels, mode, model_class,
         elif optimizer_type is OptimizerType.ADAM:
             optimizer = tf.train.AdamOptimizer(
                 learning_rate=learning_rate,
-                epsilon=1e-6
+                epsilon=1e-8
             )
         else:
             raise ValueError(
