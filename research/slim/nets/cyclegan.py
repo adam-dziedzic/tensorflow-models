@@ -131,7 +131,7 @@ def cyclegan_generator_resnet(images,
                               num_outputs=3,
                               tanh_linear_slope=0.0,
                               is_training=False):
-  """Defines the cyclegan resnet network architecture.
+  """Defines the cyclegan nets network architecture.
 
   As closely as possible following
   https://github.com/junyanz/CycleGAN/blob/master/models/architectures.lua#L232

@@ -68,7 +68,7 @@ def create_model(hparams,
   Raises:
     ValueError: unknown hparams.arch setting
   """
-  if num_classes is None and hparams.arch in ['resnet', 'simple']:
+  if num_classes is None and hparams.arch in ['nets', 'simple']:
     raise ValueError('Num classes must be provided to create task classifier')
 
   if target_images.dtype != tf.float32:
@@ -112,7 +112,7 @@ def create_model(hparams,
       if hparams.arch == 'dcgan':
         end_points = dcgan(
             target_images, latent_vars, hparams, scope='generator')
-      elif hparams.arch == 'resnet':
+      elif hparams.arch == 'nets':
         end_points = resnet_generator(
             source_images,
             target_images.shape.as_list()[1:4],
@@ -150,7 +150,7 @@ def create_model(hparams,
       # Domain Classifier #
       #####################
       if hparams.arch in [
-          'dcgan', 'resnet', 'residual_interpretation', 'simple', 'identity',
+          'dcgan', 'nets', 'residual_interpretation', 'simple', 'identity',
       ]:
 
         # Add a discriminator for these architectures
@@ -169,7 +169,7 @@ def create_model(hparams,
       # Task Classifier #
       ###################
       if hparams.task_tower != 'none' and hparams.arch in [
-          'resnet', 'residual_interpretation', 'simple', 'identity',
+          'nets', 'residual_interpretation', 'simple', 'identity',
       ]:
         with tf.variable_scope('discriminator'):
           with tf.variable_scope('task_tower'):
@@ -303,7 +303,7 @@ def project_latent_vars(hparams, proj_shape, latent_vars, combine_method='sum'):
 
 
 def resnet_block(net, hparams):
-  """Create a resnet block."""
+  """Create a nets block."""
   net_in = net
   net = slim.conv2d(
       net,
@@ -323,7 +323,7 @@ def resnet_block(net, hparams):
 
 
 def resnet_stack(images, output_shape, hparams, scope=None):
-  """Create a resnet style transfer block.
+  """Create a nets style transfer block.
 
   Args:
     images: [batch-size, height, width, channels] image tensor to feed as input
@@ -332,7 +332,7 @@ def resnet_stack(images, output_shape, hparams, scope=None):
     scope: Variable scope
 
   Returns:
-    Images after processing with resnet blocks.
+    Images after processing with nets blocks.
   """
   end_points = {}
   if hparams.noise_channel:
@@ -621,7 +621,7 @@ def residual_interpretation_generator(images,
                                       latent_vars=None):
   """Creates a generator producing purely residual transformations.
 
-  A residual generator differs from the resnet generator in that each 'block' of
+  A residual generator differs from the nets generator in that each 'block' of
   the residual generator produces a residual image. Consequently, the 'progress'
   of the model generation process can be directly observed at inference time,
   making it easier to diagnose and understand.

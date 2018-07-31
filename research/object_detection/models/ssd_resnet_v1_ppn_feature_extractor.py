@@ -27,7 +27,7 @@ slim = tf.contrib.slim
 
 
 class _SSDResnetPpnFeatureExtractor(ssd_meta_arch.SSDFeatureExtractor):
-  """SSD feature extractor based on resnet architecture and PPN."""
+  """SSD feature extractor based on nets architecture and PPN."""
 
   def __init__(self,
                is_training,
@@ -57,8 +57,8 @@ class _SSDResnetPpnFeatureExtractor(ssd_meta_arch.SSDFeatureExtractor):
       conv_hyperparams_fn: A function to construct tf slim arg_scope for conv2d
         and separable_conv2d ops in the layers that are added on top of the
         base feature extractor.
-      resnet_base_fn: base resnet network to use.
-      resnet_scope_name: scope name to construct resnet
+      resnet_base_fn: base nets network to use.
+      resnet_scope_name: scope name to construct nets
       reuse_weights: Whether to reuse variables. Default is None.
       use_explicit_padding: Whether to use explicit padding when extracting
         features. Default is False.
@@ -70,7 +70,7 @@ class _SSDResnetPpnFeatureExtractor(ssd_meta_arch.SSDFeatureExtractor):
         hyperparameters of the base feature extractor with the one from
         `conv_hyperparams_fn`.
       use_bounded_activations: Whether or not to use bounded activations for
-        resnet v1 bottleneck residual unit. Bounded activations better lend
+        nets v1 bottleneck residual unit. Bounded activations better lend
         themselves to quantized inference.
     """
     super(_SSDResnetPpnFeatureExtractor, self).__init__(
@@ -84,7 +84,7 @@ class _SSDResnetPpnFeatureExtractor(ssd_meta_arch.SSDFeatureExtractor):
     self._use_bounded_activations = use_bounded_activations
 
   def _filter_features(self, image_features):
-    # TODO(rathodv): Change resnet endpoint to strip scope prefixes instead
+    # TODO(rathodv): Change nets endpoint to strip scope prefixes instead
     # of munging the scope here.
     filtered_image_features = dict({})
     for key, feature in image_features.items():

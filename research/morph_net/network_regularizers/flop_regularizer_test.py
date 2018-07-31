@@ -355,7 +355,7 @@ class GammaFlopResidualConnectionsLossTest(tf.test.TestCase):
     self._threshold = 0.6
 
   def buildModel(self, resnet_fn, block_fn):
-    # We use this model as a test case because the slim.nets.resnet module is
+    # We use this model as a test case because the slim.nets.nets module is
     # used in some production.
     #
     # The model looks as follows:

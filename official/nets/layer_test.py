@@ -15,7 +15,7 @@
 """Test that the definitions of ResNet layers haven't changed.
 
 These tests will fail if either:
-  a)  The graph of a resnet layer changes and the change is significant enough
+  a)  The graph of a nets layer changes and the change is significant enough
       that it can no longer load existing checkpoints.
   b)  The numerical results produced by the layer change.
 
@@ -34,7 +34,7 @@ from __future__ import print_function
 import sys
 
 import tensorflow as tf   # pylint: disable=g-bad-import-order
-from official.resnet import resnet_model
+from official.nets import resnet_model
 from official.utils.testing import reference_data
 
 
@@ -65,7 +65,7 @@ class BaseTest(reference_data.BaseTest):
 
   @property
   def test_name(self):
-    return "resnet"
+    return "nets"
 
   def _batch_norm_ops(self, test=False):
     name = "batch_norm"
@@ -104,7 +104,7 @@ class BaseTest(reference_data.BaseTest):
 
   def _resnet_block_ops(self, test, batch_size, bottleneck, projection,
                         resnet_version, width, channels):
-    """Test whether resnet block construction has changed.
+    """Test whether nets block construction has changed.
 
     Args:
       test: Whether or not to run as a test case.

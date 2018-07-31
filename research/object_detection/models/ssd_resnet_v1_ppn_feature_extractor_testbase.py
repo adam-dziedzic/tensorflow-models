@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for ssd resnet v1 feature extractors."""
+"""Tests for ssd nets v1 feature extractors."""
 import abc
 import numpy as np
 

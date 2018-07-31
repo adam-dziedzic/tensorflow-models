@@ -29,7 +29,7 @@ import tensorflow as tf
 from absl import flags
 from enum import Enum
 
-from official.resnet import resnet_model
+from official.nets import resnet_model
 from official.utils.export import export
 from official.utils.flags import core as flags_core
 from official.utils.logs import hooks_helper
@@ -209,7 +209,7 @@ def resnet_model_fn(features, labels, mode, model_class,
                     conv_type=resnet_model.DEFAULT_CONV_TYPE,
                     optimizer_type=DEFAULT_OPTIMIZER,
                     run_type=DEFAULT_RUN_TYPE):
-    """Shared functionality for different resnet model_fns.
+    """Shared functionality for different nets model_fns.
 
     Initializes the ResnetModel representing the model layers
     and uses that model to build the necessary EstimatorSpecs for
@@ -436,7 +436,7 @@ def resnet_main(
         dataset_name = dataset_name + '-synthetic'
 
     benchmark_logger = logger.get_benchmark_logger()
-    benchmark_logger.log_run_info('resnet', dataset_name, run_params,
+    benchmark_logger.log_run_info('nets', dataset_name, run_params,
                                   test_id=flags_obj.benchmark_test_id)
 
     train_hooks = hooks_helper.get_train_hooks(

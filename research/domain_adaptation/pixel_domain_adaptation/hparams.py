@@ -20,7 +20,7 @@ def create_hparams(hparam_string=None):
   """Create model hyperparameters. Parse nondefault from given string."""
   hparams = tf.contrib.training.HParams(
       # The name of the architecture to use.
-      arch='resnet',
+      arch='nets',
       lrelu_leakiness=0.2,
       batch_norm_decay=0.9,
       weight_decay=1e-5,
@@ -118,10 +118,10 @@ def create_hparams(hparam_string=None):
       #########################
       # Resnet Hyperparameters#
       #########################
-      resnet_blocks=6,  # Number of resnet blocks
-      resnet_filters=64,  # Number of filters per conv in resnet blocks
+      resnet_blocks=6,  # Number of nets blocks
+      resnet_filters=64,  # Number of filters per conv in nets blocks
       # If true, add original input back to result of convolutions inside the
-      # resnet arch. If false, it turns into a simple stack of conv/relu/BN
+      # nets arch. If false, it turns into a simple stack of conv/relu/BN
       # layers.
       resnet_residuals=True,
 

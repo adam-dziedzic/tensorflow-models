@@ -246,7 +246,7 @@ def extract_features(images,
   Raises:
     ValueError: Unrecognized model variant.
   """
-  if 'resnet' in model_variant:
+  if 'nets' in model_variant:
     arg_scope = arg_scopes_map[model_variant](
         weight_decay=weight_decay,
         batch_norm_decay=0.95,

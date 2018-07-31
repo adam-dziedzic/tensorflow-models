@@ -31,17 +31,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import numpy as np
 import tensorflow as tf
-from enum import Enum
 
-
-class ConvType(Enum):
-    STANDARD = 1
-    SPECTRAL_PARAM = 2
-    SPECTRAL_DIRECT = 3
-    SPATIAL_PARAM = 4
-
+from .utils import ConvType, get_conv_2D
 
 _BATCH_NORM_DECAY = 0.997
 _BATCH_NORM_EPSILON = 1e-5
@@ -93,23 +85,6 @@ def fixed_padding(inputs, kernel_size, data_format):
         padded_inputs = tf.pad(inputs, [[0, 0], [pad_beg, pad_end],
                                         [pad_beg, pad_end], [0, 0]])
     return padded_inputs
-
-
-def _glorot_sample(kernel_size, in_channel, filters):
-    """
-    The same definition of the glorot initialization as in tensorflow but
-    for not a variable but for a separate sample.
-
-    :param kernel_size: The width and length of the filter (kernel).
-    :param in_channel: Number of input channels for an image (typically 3
-      for RGB or 1 for a gray scale image).
-    :param filters: Number of filters in a layer
-    :return: numpy array with glorot initialized values
-    """
-    limit = np.sqrt(6 / (in_channel + filters))
-    return np.random.uniform(
-        low=-limit, high=limit,
-        size=(in_channel, filters, kernel_size, kernel_size))
 
 
 class Model(object):
@@ -311,7 +286,7 @@ class Model(object):
                         strides=self.block_strides[i], training=training)
 
             # Only apply the BN and ReLU for model that does pre_activation in
-            # each building/bottleneck block, eg resnet V2.
+            # each building/bottleneck block, eg nets V2.
             if self.pre_activation:
                 inputs = batch_norm(inputs, training, self.data_format)
                 inputs = tf.nn.relu(inputs)
@@ -329,7 +304,6 @@ class Model(object):
             inputs = tf.layers.dense(inputs=inputs, units=self.num_classes)
             inputs = tf.identity(inputs, 'final_dense')
             return inputs
-
 
     def conv2d_spectral_param(self, inputs, filters, kernel_size, strides,
                               padding, use_bias=False):
@@ -353,80 +327,13 @@ class Model(object):
             strides = [1, 1, strides, strides]
             data_format = "NCHW"
 
-        with self._model_variable_scope('spec_conv_layer'):
-            with self._model_variable_scope('spec_conv_kernel'):
-                glorot_sample = _glorot_sample(kernel_size, in_channel,
-                                                    filters)
+        out = get_conv_2D(inputs, kernel_size=kernel_size,
+                          in_channel=in_channel, filter=filters,
+                          strides=strides, conv_type = self.conv_type,
+                          use_bias=False, random_seed=self.random_seed,
+                          data_format=data_format)
 
-                if self.conv_type == ConvType.SPATIAL_PARAM:
-                    glorot_sample = tf.convert_to_tensor(glorot_sample,
-                                                         inputs.dtype)
-                    # we need kernel tensor of shape [filter_height, filter_
-                    # width, in_channels, out_channels] Here we do it only once,
-                    # for initialization.
-                    glorot_sample = tf.transpose(glorot_sample, [2, 3, 0, 1])
-                    spatial_weight = tf.get_variable(
-                        name='spatial_weight', initializer=glorot_sample)
-                else:
-                    """
-                    tf.fft2d: Computes the 2-dimensional discrete Fourier 
-                    transform over the inner-most 2 dimensions of input.
-                    """
-                    # shape channel_in, channel_out, kernel_size, kernel_size
-                    spectral_weight_init = tf.fft2d(glorot_sample)
-
-                    if self.conv_type is ConvType.SPECTRAL_PARAM:
-
-                        real_init = tf.get_variable(
-                            name='real',
-                            initializer=tf.real(spectral_weight_init))
-
-                        imag_init = tf.get_variable(
-                            name='imag',
-                            initializer=tf.imag(spectral_weight_init))
-
-                        spectral_weight = tf.complex(
-                            real_init, imag_init, name='spectral_weight')
-
-                    elif self.conv_type is ConvType.SPECTRAL_DIRECT:
-                        tf.logging.ERROR("This does not work, the type of "
-                                         "paramaters should be in [tf.float32, "
-                                         "tf.float64, tf.float16, tf.bfloat16]")
-                        spectral_weight = tf.get_variable(
-                            name='spectral_param',
-                            initializer=spectral_weight_init)
-
-                    else:
-                        raise ValueError('conv_format should be: ' + ",".join(
-                            [conv_type.name for conv_type in ConvType]))
-
-                    """
-                    ifft2d: Computes the inverse 2-dimensional discrete Fourier 
-                    transform over the inner-most 2 dimensions of input.
-                    """
-                    complex_spatial_weight = tf.ifft2d(spectral_weight)
-                    spatial_weight = tf.real(complex_spatial_weight,
-                                             name='spatial_weight')
-
-                    # we need kernel tensor of shape [filter_height, filter_
-                    # width, in_channels, out_channels]
-                    spatial_weight = tf.transpose(spatial_weight, [2, 3, 0, 1])
-
-            out = tf.nn.conv2d(inputs, spatial_weight, strides=strides,
-                               padding=padding, data_format=data_format)
-
-            if use_bias:
-                with self._model_variable_scope('spec_conv_bias'):
-                    b_shape = [filters]
-                    bias = tf.get_variable(
-                        name='spec_conv_bias',
-                        shape=b_shape,
-                        initializer=tf.glorot_uniform_initializer(
-                            seed=self.random_seed
-                        ))
-                    out = tf.nn.bias_add(out, bias, data_format=data_format)
-
-            return out
+        return out
 
     def conv2d_fixed_padding(self, inputs, filters, kernel_size, strides):
         """Strided 2-D convolution with explicit padding.

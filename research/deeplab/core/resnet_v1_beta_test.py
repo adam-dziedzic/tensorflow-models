@@ -94,9 +94,9 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
       logits, end_points = self._resnet_small(inputs,
                                               num_classes,
                                               global_pool=global_pool,
-                                              scope='resnet')
+                                              scope='nets')
 
-    self.assertTrue(logits.op.name.startswith('resnet/logits'))
+    self.assertTrue(logits.op.name.startswith('nets/logits'))
     self.assertListEqual(logits.get_shape().as_list(), [2, 1, 1, num_classes])
     self.assertTrue('predictions' in end_points)
     self.assertListEqual(end_points['predictions'].get_shape().as_list(),
@@ -112,9 +112,9 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
                                               num_classes,
                                               global_pool=global_pool,
                                               multi_grid=multi_grid,
-                                              scope='resnet')
+                                              scope='nets')
 
-    self.assertTrue(logits.op.name.startswith('resnet/logits'))
+    self.assertTrue(logits.op.name.startswith('nets/logits'))
     self.assertListEqual(logits.get_shape().as_list(), [2, 1, 1, num_classes])
     self.assertTrue('predictions' in end_points)
     self.assertListEqual(end_points['predictions'].get_shape().as_list(),
@@ -128,15 +128,15 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
       _, end_points = self._resnet_small(inputs,
                                          num_classes,
                                          global_pool=global_pool,
-                                         scope='resnet')
+                                         scope='nets')
       endpoint_to_shape = {
-          'resnet/conv1_1': [2, 112, 112, 64],
-          'resnet/conv1_2': [2, 112, 112, 64],
-          'resnet/conv1_3': [2, 112, 112, 128],
-          'resnet/block1': [2, 28, 28, 4],
-          'resnet/block2': [2, 14, 14, 8],
-          'resnet/block3': [2, 7, 7, 16],
-          'resnet/block4': [2, 7, 7, 32]}
+          'nets/conv1_1': [2, 112, 112, 64],
+          'nets/conv1_2': [2, 112, 112, 64],
+          'nets/conv1_3': [2, 112, 112, 128],
+          'nets/block1': [2, 28, 28, 4],
+          'nets/block2': [2, 14, 14, 8],
+          'nets/block3': [2, 7, 7, 16],
+          'nets/block4': [2, 7, 7, 32]}
       for endpoint, shape in endpoint_to_shape.iteritems():
         self.assertListEqual(end_points[endpoint].get_shape().as_list(), shape)
 
@@ -148,15 +148,15 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
       _, end_points = self._resnet_small(inputs,
                                          num_classes,
                                          global_pool=global_pool,
-                                         scope='resnet')
+                                         scope='nets')
       endpoint_to_shape = {
-          'resnet/conv1_1': [2, 161, 161, 64],
-          'resnet/conv1_2': [2, 161, 161, 64],
-          'resnet/conv1_3': [2, 161, 161, 128],
-          'resnet/block1': [2, 41, 41, 4],
-          'resnet/block2': [2, 21, 21, 8],
-          'resnet/block3': [2, 11, 11, 16],
-          'resnet/block4': [2, 11, 11, 32]}
+          'nets/conv1_1': [2, 161, 161, 64],
+          'nets/conv1_2': [2, 161, 161, 64],
+          'nets/conv1_3': [2, 161, 161, 128],
+          'nets/block1': [2, 41, 41, 4],
+          'nets/block2': [2, 21, 21, 8],
+          'nets/block3': [2, 11, 11, 16],
+          'nets/block4': [2, 11, 11, 32]}
       for endpoint, shape in endpoint_to_shape.iteritems():
         self.assertListEqual(end_points[endpoint].get_shape().as_list(), shape)
 
@@ -170,15 +170,15 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
                                          num_classes,
                                          global_pool=global_pool,
                                          output_stride=output_stride,
-                                         scope='resnet')
+                                         scope='nets')
       endpoint_to_shape = {
-          'resnet/conv1_1': [2, 161, 161, 64],
-          'resnet/conv1_2': [2, 161, 161, 64],
-          'resnet/conv1_3': [2, 161, 161, 128],
-          'resnet/block1': [2, 41, 41, 4],
-          'resnet/block2': [2, 41, 41, 8],
-          'resnet/block3': [2, 41, 41, 16],
-          'resnet/block4': [2, 41, 41, 32]}
+          'nets/conv1_1': [2, 161, 161, 64],
+          'nets/conv1_2': [2, 161, 161, 64],
+          'nets/conv1_3': [2, 161, 161, 128],
+          'nets/block1': [2, 41, 41, 4],
+          'nets/block2': [2, 41, 41, 8],
+          'nets/block3': [2, 41, 41, 16],
+          'nets/block4': [2, 41, 41, 32]}
       for endpoint, shape in endpoint_to_shape.iteritems():
         self.assertListEqual(end_points[endpoint].get_shape().as_list(), shape)
 
@@ -223,8 +223,8 @@ class ResnetCompleteNetworkTest(tf.test.TestCase):
       logits, _ = self._resnet_small(inputs,
                                      num_classes,
                                      global_pool=global_pool,
-                                     scope='resnet')
-    self.assertTrue(logits.op.name.startswith('resnet/logits'))
+                                     scope='nets')
+    self.assertTrue(logits.op.name.startswith('nets/logits'))
     self.assertListEqual(logits.get_shape().as_list(),
                          [None, 1, 1, num_classes])
     images = create_test_input(batch, height, width, 3)

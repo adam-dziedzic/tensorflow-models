@@ -38,7 +38,7 @@ training_strategy: 'mvtcn'
 
 # Which embedder architecture to use.
 # Options are 'inception_conv_ss_fc' (used in pouring / pose experiments),
-# 'resnet'.
+# 'nets'.
 embedder_strategy: 'inception_conv_ss_fc'
 
 # Size of the TCN embedding.
@@ -57,7 +57,7 @@ inception_conv_ss_fc:
     keep_fc: 1.0
 
 resnet:
-  pretrained_checkpoint: 'pretrained_checkpoints/resnet/resnet_v2_50.ckpt'
+  pretrained_checkpoint: 'pretrained_checkpoints/nets/resnet_v2_50.ckpt'
   pretrained_layer: 4
   finetune: false
   adaptation_blocks: '512_3-512_3'

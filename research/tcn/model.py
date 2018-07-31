@@ -56,7 +56,7 @@ def get_embedder(
 
   strategy_to_embedder = {
       'inception_conv_ss_fc': InceptionConvSSFCEmbedder,
-      'resnet': ResnetEmbedder,
+      'nets': ResnetEmbedder,
   }
   if embedder_strategy not in strategy_to_embedder:
     raise ValueError('unknown embedder_strategy', embedder_strategy)
@@ -214,7 +214,7 @@ class PretrainedEmbedder(object):
 class ResnetEmbedder(PretrainedEmbedder):
   """Resnet TCN.
 
-  ResnetV2 -> resnet adaptation layers -> optional l2 normalize -> embedding.
+  ResnetV2 -> nets adaptation layers -> optional l2 normalize -> embedding.
   """
 
   def __init__(self, config, images, embedding_size, is_training,
@@ -257,7 +257,7 @@ class ResnetEmbedder(PretrainedEmbedder):
       self._adaptation_scope = vs.name
       net = self._pretrained_output
 
-      # Define some adaptation blocks on top of the pre-trained resnet output.
+      # Define some adaptation blocks on top of the pre-trained nets output.
       adaptation_blocks = []
       adaptation_block_params = [map(
           int, i.split('_')) for i in self._config.adaptation_blocks.split('-')]

@@ -21,7 +21,7 @@ import unittest
 
 import tensorflow as tf  # pylint: disable=g-bad-import-order
 
-from official.resnet import imagenet_main
+from official.nets import imagenet_main
 from official.utils.testing import integration
 
 tf.logging.set_verbosity(tf.logging.ERROR)
