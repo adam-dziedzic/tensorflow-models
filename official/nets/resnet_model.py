@@ -319,9 +319,8 @@ class Model(object):
         :param use_bias: if bias should be added to each filter
         """
         out = get_conv_2D(
-            inputs, kernel_size=kernel_size, in_channel=in_channel,
-            filter=filters, padding=padding, strides=strides,
-            conv_type=self.conv_type, use_bias=use_bias,
+            inputs, kernel_size=kernel_size, filters=filters, padding=padding,
+            strides=strides, conv_type=self.conv_type, use_bias=use_bias,
             random_seed=self.random_seed, data_format=self.data_format)
 
         return out

@@ -24,11 +24,12 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+
 import tensorflow as tf
 # pylint: disable=g-bad-import-order
 from absl import flags
-from enum import Enum
 
+from official.nets import densenet_model
 from official.nets import resnet_model
 from official.utils.export import export
 from official.utils.flags import core as flags_core
@@ -36,22 +37,30 @@ from official.utils.logs import hooks_helper
 from official.utils.logs import logger
 from official.utils.misc import distribution_utils
 from official.utils.misc import model_helpers
+from .utils import EnumWithNames
 
 
 # pylint: enable=g-bad-import-order
 
-class OptimizerType(Enum):
+
+class OptimizerType(EnumWithNames):
     MOMENTUM = 1
     ADAM = 2
 
 
-class RunType(Enum):
+class RunType(EnumWithNames):
     TEST = 0
     DEBUG = 1
 
 
+class ModelType(EnumWithNames):
+    RES_NET = 0
+    DENSE_NET = 1
+
+
 DEFAULT_OPTIMIZER = OptimizerType.ADAM
 DEFAULT_RUN_TYPE = RunType.TEST
+DEFAULT_MODEL_TYPE = ModelType.DENSE_NET
 
 
 ################################################################################
@@ -203,17 +212,16 @@ def learning_rate_with_decay(
     return learning_rate_fn
 
 
-def resnet_model_fn(features, labels, mode, model_class,
-                    resnet_size, weight_decay, learning_rate_fn, momentum,
-                    data_format, resnet_version, loss_scale,
-                    loss_filter_fn=None, dtype=resnet_model.DEFAULT_DTYPE,
-                    conv_type=resnet_model.DEFAULT_CONV_TYPE,
-                    optimizer_type=DEFAULT_OPTIMIZER,
-                    run_type=DEFAULT_RUN_TYPE):
+def net_model_fn(features, labels, mode, model,
+                 resnet_size, weight_decay, learning_rate_fn, momentum,
+                 data_format, resnet_version, loss_scale,
+                 loss_filter_fn=None, dtype=resnet_model.DEFAULT_DTYPE,
+                 conv_type=resnet_model.DEFAULT_CONV_TYPE,
+                 optimizer_type=DEFAULT_OPTIMIZER,
+                 run_type=DEFAULT_RUN_TYPE):
     """Shared functionality for different nets model_fns.
 
-    Initializes the ResnetModel representing the model layers
-    and uses that model to build the necessary EstimatorSpecs for
+    Uses that model to build the necessary EstimatorSpecs for
     the `mode` in question. For training, this means building losses,
     the optimizer, and the train op that get passed into the EstimatorSpec.
     For evaluation and prediction, the EstimatorSpec is returned without
@@ -224,8 +232,7 @@ def resnet_model_fn(features, labels, mode, model_class,
       labels: tensor representing class labels for all input images
       mode: current estimator mode; should be one of
         `tf.estimator.ModeKeys.TRAIN`, `EVALUATE`, `PREDICT`
-      model_class: a class representing a TensorFlow model that has a __call__
-        function. We assume here that this is a subclass of ResnetModel.
+      model: a TensorFlow model that has a __call__ function.
       resnet_size: A single integer for the size of the ResNet model.
       weight_decay: weight decay loss rate used to regularize learned variables.
       learning_rate_fn: function that returns the current learning rate given
@@ -254,9 +261,6 @@ def resnet_model_fn(features, labels, mode, model_class,
     tf.summary.image('images', features, max_outputs=6)
 
     features = tf.cast(features, dtype)
-
-    model = model_class(resnet_size, data_format, resnet_version=resnet_version,
-                        dtype=dtype, conv_type=conv_type)
 
     logits = model(features, mode == tf.estimator.ModeKeys.TRAIN)
 
@@ -369,7 +373,7 @@ def resnet_model_fn(features, labels, mode, model_class,
         eval_metric_ops=metrics)
 
 
-def resnet_main(
+def net_main(
         flags_obj, model_function, input_function, dataset_name, shape=None):
     """Shared main loop for ResNet Models.
 
@@ -390,7 +394,7 @@ def resnet_main(
 
     model_helpers.apply_clean(flags.FLAGS)
 
-    # Using the Winograd non-fused algorithms provides a small performance boost.
+    # Using the Winograd non-fused algorithm provides a small performance boost.
     os.environ['TF_ENABLE_WINOGRAD_NONFUSED'] = '1'
 
     # Create session config based on values of inter_op_parallelism_threads and
@@ -412,6 +416,9 @@ def resnet_main(
         model_fn=model_function, model_dir=flags_obj.model_dir,
         config=run_config,
         params={
+            'model_type': ModelType[flags_obj.model_type],
+            'densenet_size': densenet_model.DenseNetSize[
+                flags_obj.densenet_size],
             'resnet_size': int(flags_obj.resnet_size),
             'data_format': flags_obj.data_format,
             'batch_size': flags_obj.batch_size,
@@ -424,6 +431,9 @@ def resnet_main(
         })
 
     run_params = {
+        'model_type': ModelType[flags_obj.model_type],
+        'densenet_size': densenet_model.DenseNetSize[
+            flags_obj.densenet_size],
         'batch_size': flags_obj.batch_size,
         'dtype': flags_core.get_tf_dtype(flags_obj),
         'resnet_size': flags_obj.resnet_size,
@@ -507,8 +517,8 @@ def resnet_main(
         classifier.export_savedmodel(flags_obj.export_dir, input_receiver_fn)
 
 
-def define_resnet_flags(resnet_size_choices=None):
-    """Add flags and validators for ResNet."""
+def define_nets_flags(resnet_size_choices=None):
+    """Add flags and validators for Nets."""
     flags_core.define_base()
     flags_core.define_performance(num_parallel_calls=False)
     flags_core.define_image()
@@ -521,25 +531,45 @@ def define_resnet_flags(resnet_size_choices=None):
         help=flags_core.help_wrap(
             'Version of ResNet. (1 or 2) See README.md for details.'))
 
+    conv_types = resnet_model.ConvType.get_names()
     flags.DEFINE_enum(
-        name='conv_type', short_name='ct', default='SPECTRAL_PARAM',
-        enum_values=[conv_type.name for conv_type in resnet_model.ConvType],
+        name='conv_type', short_name='ct',
+        # default='SPECTRAL_PARAM',
+        default='STANDARD',
+        enum_values=conv_types,
         help=flags_core.help_wrap(
             'Version of the convolution used. STANDARD is with default '
             'convolutional layer. SPECTRAL_PARAM initializes parameters in the'
             'frequency domain. SPATIAL_PARAM similar to the spectral version'
             ' but initializes parameters in the spatial domain.'))
 
+    optimizer_types = OptimizerType.get_names()
     flags.DEFINE_enum(
         name='optimizer_type', short_name='opt', default='ADAM',
-        enum_values=[optimizer_type.name for optimizer_type in OptimizerType],
+        enum_values=optimizer_types,
         help=flags_core.help_wrap(
-            'Version of the optimizer to use, e.g., ADAM or MOMENTUM'))
+            'Version of the optimizer to use, e.g., ' + ",".join(
+                optimizer_types)))
 
+    model_types = ModelType.get_names()
+    flags.DEFINE_enum(
+        name='model_type', short_name='model', default='DENSE_NET',
+        enum_values=model_types,
+        help=flags_core.help_wrap(
+            'Type of the model: ' + ",".join(model_types)))
+
+    densenet_sizes = densenet_model.DenseNetSize.get_names()
+    flags.DEFINE_enum(
+        name='densenet_size', short_name='densenet_size',
+        default='DENSE_NET_121', enum_values=densenet_sizes,
+        help=flags_core.help_wrap(
+            'The size of the dense net model: ' + ",".join(densenet_sizes)))
+
+    run_types = [run_type.name for run_type in RunType]
     flags.DEFINE_enum(
         name='run_type', short_name='run', default='TEST',
-        enum_values=[run_type.name for run_type in RunType],
-        help=flags_core.help_wrap('Type of the run: TEST or DEBUG'))
+        enum_values=run_types,
+        help=flags_core.help_wrap('Type of the run: ' + ",".join(run_types)))
 
     choice_kwargs = dict(
         name='resnet_size', short_name='rs', default='50',

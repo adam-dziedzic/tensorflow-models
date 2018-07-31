@@ -144,9 +144,9 @@ class BaseTest(tf.test.TestCase):
     batch_size = 135
     num_classes = 246
 
-    model = cifar10_main.Cifar10Model(32, data_format='channels_last',
-                                      num_classes=num_classes,
-                                      resnet_version=resnet_version)
+    model = cifar10_main.Cifar10ResnetModel(32, data_format='channels_last',
+                                            num_classes=num_classes,
+                                            resnet_version=resnet_version)
     fake_input = tf.random_uniform([batch_size, _HEIGHT, _WIDTH, _NUM_CHANNELS])
     output = model(fake_input, training=True)
 

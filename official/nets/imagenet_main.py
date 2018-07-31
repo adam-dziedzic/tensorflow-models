@@ -25,7 +25,7 @@ from absl import flags
 
 from official.nets import imagenet_preprocessing
 from official.nets import resnet_model
-from official.nets import resnet_run_loop
+from official.nets import run_loop
 from official.utils.flags import core as flags_core
 from official.utils.logs import logger
 
@@ -188,7 +188,7 @@ def input_fn(is_training, data_dir, batch_size, num_epochs=1, num_gpus=None,
     dataset = dataset.apply(tf.contrib.data.parallel_interleave(
         tf.data.TFRecordDataset, cycle_length=10))
 
-    return resnet_run_loop.process_record_dataset(
+    return run_loop.process_record_dataset(
         dataset=dataset,
         is_training=is_training,
         batch_size=batch_size,
@@ -202,7 +202,7 @@ def input_fn(is_training, data_dir, batch_size, num_epochs=1, num_gpus=None,
 
 
 def get_synth_input_fn():
-    return resnet_run_loop.get_synth_input_fn(
+    return run_loop.get_synth_input_fn(
         _DEFAULT_IMAGE_SIZE, _DEFAULT_IMAGE_SIZE, _NUM_CHANNELS, _NUM_CLASSES)
 
 
@@ -291,12 +291,12 @@ def _get_block_sizes(resnet_size):
 
 def imagenet_model_fn(features, labels, mode, params):
     """Our model_fn for ResNet to be used with our Estimator."""
-    learning_rate_fn = resnet_run_loop.learning_rate_with_decay(
+    learning_rate_fn = run_loop.learning_rate_with_decay(
         batch_size=params['batch_size'], batch_denom=256,
         num_images=_NUM_IMAGES['train'], boundary_epochs=[30, 60, 80, 90],
         decay_rates=[1, 0.1, 0.01, 0.001, 1e-4])
 
-    return resnet_run_loop.resnet_model_fn(
+    return run_loop.net_model_fn(
         features=features,
         labels=labels,
         mode=mode,
@@ -314,9 +314,9 @@ def imagenet_model_fn(features, labels, mode, params):
 
 
 def define_imagenet_flags():
-    resnet_run_loop.define_resnet_flags(
+    run_loop.define_nets_flags(
         resnet_size_choices=['18', '34', '50', '101', '152', '200'])
-    flags.adopt_module_key_flags(resnet_run_loop)
+    flags.adopt_module_key_flags(run_loop)
     flags_core.set_defaults(train_epochs=100)
 
 
@@ -329,7 +329,7 @@ def run_imagenet(flags_obj):
     input_function = (flags_obj.use_synthetic_data and get_synth_input_fn()
                       or input_fn)
 
-    resnet_run_loop.resnet_main(
+    run_loop.net_main(
         flags_obj, imagenet_model_fn, input_function, DATASET_NAME,
         shape=[_DEFAULT_IMAGE_SIZE, _DEFAULT_IMAGE_SIZE, _NUM_CHANNELS])
 
