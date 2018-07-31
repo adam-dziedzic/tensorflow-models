@@ -47,7 +47,7 @@ from tensorflow.python.keras.models import Model
 from tensorflow.python.keras.utils.data_utils import get_file
 from tensorflow.python.util.tf_export import tf_export
 
-from .utils import ConvType
+from .utils import ConvType, get_conv_2D
 
 DENSENET121_WEIGHT_PATH = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.8/densenet121_weights_tf_dim_ordering_tf_kernels.h5'
 DENSENET121_WEIGHT_PATH_NO_TOP = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.8/densenet121_weights_tf_dim_ordering_tf_kernels_notop.h5'
@@ -59,42 +59,72 @@ DENSENET201_WEIGHT_PATH_NO_TOP = 'https://github.com/fchollet/deep-learning-mode
 DEFAULT_CONV_TYPE = ConvType.STANDARD
 
 
-def dense_block(x, blocks, name):
+def conv_2D(inputs, filters, kernel_size, name, strides=1, use_bias=False,
+            data_format="channels_last"):
+    """
+    Get the 2D convolutional layer.
+
+    :param inputs: the input layers (maps) to the convolution.
+    :param filters: the number of filters for the layer.
+    :param kernel_size: the size of the kernel.
+    :param name: the name of the layer
+    :param strides: the stride of the convolution, how many pixels should we
+    move through for each filter
+    :param use_bias: if bias should be added to the output of a convolution
+    with a filter
+    :return: the 2D convolutional layer
+    """
+    conv_type = DEFAULT_CONV_TYPE
+    if conv_type == ConvType.STANDARD:
+        return Conv2D(inputs, filters=filters, kernel_size=kernel_size,
+                      strides=strides, use_bias=use_bias, name=name,
+                      data_format=data_format)(inputs)
+    else:
+        return get_conv_2D(
+            inputs=inputs, filters=filters, kernel_size=kernel_size,
+            strides=strides, use_bias=use_bias, name=name, conv_type=conv_type,
+            data_format=data_format)
+
+
+def dense_block(x, blocks, name, data_format="channels_last"):
     """A dense block.
 
     Arguments:
         x: input tensor.
         blocks: integer, the number of building blocks.
         name: string, block label.
+        data_format: channels first or last
 
     Returns:
         output tensor for the block.
     """
     for i in range(blocks):
-        x = conv_block(x, 32, name=name + '_block' + str(i + 1))
+        x = conv_block(x, 32, name=name + '_block' + str(i + 1),
+                       data_format=data_format)
     return x
 
 
-def transition_block(x, reduction, name):
+def transition_block(x, reduction, name, data_format="channels_last"):
     """A transition block.
 
     Arguments:
         x: input tensor.
         reduction: float, compression rate at transition layers.
         name: string, block label.
+        data_format: channels last or first
 
     Returns:
         output tensor for the block.
     """
-    bn_axis = 3 if K.image_data_format() == 'channels_last' else 1
+    # batch normalization axes
+    bn_axis = 3 if data_format == 'channels_last' else 1
     x = BatchNormalization(axis=bn_axis, epsilon=1.001e-5, name=name + '_bn')(x)
     x = Activation('relu', name=name + '_relu')(x)
-    x = Conv2D(
-        filters=int(K.int_shape(x)[bn_axis] * reduction),
+    x = conv_2D(
+        inputs=x, filters=int(K.int_shape(x)[bn_axis] * reduction),
         kernel_size=1,
         use_bias=False,
-        name=name + '_conv')(
-        x)
+        name=name + '_conv', data_format=data_format)
     x = AveragePooling2D(2, strides=2, name=name + '_pool')(x)
     return x
 
@@ -114,32 +144,31 @@ class ConvSpectralSpatial2D(object):
         return inputs
 
 
-def conv_block(x, growth_rate, name):
+def conv_block(x, growth_rate, name, data_format="channels_last"):
     """A building block for a dense block.
 
     Arguments:
         x: input tensor.
         growth_rate: float, growth rate at dense layers.
         name: string, block label.
+        data_format: channels first or last
 
     Returns:
         output tensor for the block.
     """
-    bn_axis = 3 if K.image_data_format() == 'channels_last' else 1
+    bn_axis = 3 if data_format == 'channels_last' else 1
     x1 = BatchNormalization(
         axis=bn_axis, epsilon=1.001e-5, name=name + '_0_bn')(
         x)
     x1 = Activation('relu', name=name + '_0_relu')(x1)
-    x1 = Conv2D(filters=4 * growth_rate, kernel_size=1, use_bias=False,
-                name=name + '_1_conv')(x1)
+    x1 = conv_2D(inputs=x1, filters=4 * growth_rate, kernel_size=1,
+                 use_bias=False, name=name + '_1_conv', data_format=data_format)
     x1 = BatchNormalization(
         axis=bn_axis, epsilon=1.001e-5, name=name + '_1_bn')(
         x1)
     x1 = Activation('relu', name=name + '_1_relu')(x1)
-    x1 = Conv2D(
-        filters=growth_rate, kernel_size=3, padding='same', use_bias=False,
-        name=name + '_2_conv')(
-        x1)
+    x1 = conv_2D(inputs=x1, filters=growth_rate, kernel_size=3, padding='same',
+                 use_bias=False, name=name + '_2_conv', data_format=data_format)
     x = Concatenate(axis=bn_axis, name=name + '_concat')([x, x1])
     return x
 
@@ -150,7 +179,10 @@ def DenseNet(blocks,
              input_tensor=None,
              input_shape=None,
              pooling=None,
-             classes=10):
+             classes=10,
+             default_size=32,  # should be 224 for imagenet
+             min_size=32,  # should be 221 for imagenet
+             data_format="channels_last"):
     """Instantiates the DenseNet architecture.
 
     Optionally loads weights pre-trained
@@ -192,6 +224,10 @@ def DenseNet(blocks,
         classes: optional number of classes to classify images
             into, only to be specified if `include_top` is True, and
             if no `weights` argument is specified.
+        default_size: Default input width/height for the model.
+        min_size: Minimum input width/height accepted by the model.
+        data_format: Should the channels be provided as the last of first
+        dimension of a given image.
 
     Returns:
         A Keras model instance.
@@ -213,9 +249,9 @@ def DenseNet(blocks,
     # Determine proper input shape
     input_shape = _obtain_input_shape(
         input_shape,
-        default_size=224,
-        min_size=221,
-        data_format=K.image_data_format(),
+        default_size=default_size,
+        min_size=min_size,
+        data_format=data_format,
         require_flatten=include_top,
         weights=weights)
 
@@ -227,23 +263,23 @@ def DenseNet(blocks,
         else:
             img_input = input_tensor
 
-    bn_axis = 3 if K.image_data_format() == 'channels_last' else 1
+    bn_axis = 3 if data_format == 'channels_last' else 1
 
     x = ZeroPadding2D(padding=((3, 3), (3, 3)))(img_input)
-    x = Conv2D(filters=64, kernel_size=7, strides=2, use_bias=False,
-               name='conv1/conv')(x)
+    x = conv_2D(inputs=x, filters=64, kernel_size=7, strides=2, use_bias=False,
+               name='conv1/conv', data_format=data_format)
     x = BatchNormalization(axis=bn_axis, epsilon=1.001e-5, name='conv1/bn')(x)
     x = Activation('relu', name='conv1/relu')(x)
     x = ZeroPadding2D(padding=((1, 1), (1, 1)))(x)
     x = MaxPooling2D(3, strides=2, name='pool1')(x)
 
-    x = dense_block(x, blocks[0], name='conv2')
-    x = transition_block(x, 0.5, name='pool2')
-    x = dense_block(x, blocks[1], name='conv3')
-    x = transition_block(x, 0.5, name='pool3')
-    x = dense_block(x, blocks[2], name='conv4')
-    x = transition_block(x, 0.5, name='pool4')
-    x = dense_block(x, blocks[3], name='conv5')
+    x = dense_block(x, blocks[0], name='conv2', data_format=data_format)
+    x = transition_block(x, 0.5, name='pool2', data_format=data_format)
+    x = dense_block(x, blocks[1], name='conv3', data_format=data_format)
+    x = transition_block(x, 0.5, name='pool3', data_format=data_format)
+    x = dense_block(x, blocks[2], name='conv4', data_format=data_format)
+    x = transition_block(x, 0.5, name='pool4', data_format=data_format)
+    x = dense_block(x, blocks[3], name='conv5', data_format=data_format)
 
     x = BatchNormalization(axis=bn_axis, epsilon=1.001e-5, name='bn')(x)
 
@@ -320,8 +356,6 @@ def DenseNet(blocks,
     return model
 
 
-@tf_export('keras.applications.DenseNet121',
-           'keras.applications.densenet.DenseNet121')
 def DenseNet121(include_top=True,
                 weights='imagenet',
                 input_tensor=None,
@@ -332,8 +366,6 @@ def DenseNet121(include_top=True,
                     input_shape, pooling, classes)
 
 
-@tf_export('keras.applications.DenseNet169',
-           'keras.applications.densenet.DenseNet169')
 def DenseNet169(include_top=True,
                 weights='imagenet',
                 input_tensor=None,
@@ -344,8 +376,6 @@ def DenseNet169(include_top=True,
                     input_shape, pooling, classes)
 
 
-@tf_export('keras.applications.DenseNet201',
-           'keras.applications.densenet.DenseNet201')
 def DenseNet201(include_top=True,
                 weights='imagenet',
                 input_tensor=None,
@@ -356,7 +386,6 @@ def DenseNet201(include_top=True,
                     input_shape, pooling, classes)
 
 
-@tf_export('keras.applications.densenet.preprocess_input')
 def preprocess_input(x, data_format=None):
     """Preprocesses a numpy array encoding a batch of images.
 

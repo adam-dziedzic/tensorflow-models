@@ -197,7 +197,8 @@ class Cifar10Model(resnet_model.Model):
             resnet_version=resnet_version,
             data_format=data_format,
             dtype=dtype,
-            conv_type=conv_type
+            conv_type=conv_type,
+            optimizer_type=optimizer_type
         )
 
 
@@ -250,7 +251,6 @@ def cifar10_model_fn(features, labels, mode, params):
         learning_rate_fn=learning_rate_fn,
         momentum=0.9,
         data_format=data_format,
-        # data_format="channels_last",
         resnet_version=params['resnet_version'],
         loss_scale=params['loss_scale'],
         loss_filter_fn=loss_filter_fn,

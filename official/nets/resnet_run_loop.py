@@ -126,6 +126,7 @@ def process_record_dataset(dataset, is_training, batch_size, shuffle_buffer,
 
 def get_synth_input_fn(height, width, num_channels, num_classes,
                        data_format="channels_last"):
+    # pylint: disable=unused-argument
     """Returns an input function that returns a dataset with zeroes.
 
     This is useful in debugging input pipeline performance, as it removes all
@@ -382,7 +383,8 @@ def resnet_main(
         all the relevant flags for running and passed to estimator.
       dataset_name: the name of the dataset for training and evaluation. This is
         used for logging purpose.
-      shape: list of ints representing the shape of the images used for training.
+      shape: list of ints representing the shape of the images used for
+        training.
         This is only used if flags_obj.export_dir is passed.
     """
 

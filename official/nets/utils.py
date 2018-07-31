@@ -78,7 +78,7 @@ def get_spatial_weights(kernel_size, in_channel, filters, conv_type, dtype):
                 initializer=spectral_weight_init)
 
         else:
-            raise ValueError('conv_format should be: ' + ",".join(
+            raise ValueError('conv_type should be: ' + ",".join(
                 [conv_type.name for conv_type in ConvType]))
 
         """
@@ -96,8 +96,8 @@ def get_spatial_weights(kernel_size, in_channel, filters, conv_type, dtype):
     return spatial_weight
 
 
-def get_conv_2D(inputs, kernel_size, in_channel, filters, strides, conv_type,
-                use_bias=False, random_seed=31, data_format="NHWC"):
+def get_conv_2D(inputs, kernel_size, in_channel, filters, conv_type, padding,
+                strides=1, use_bias=False, random_seed=31, data_format="NHWC"):
     """
     Get the convolutional layer.
 
@@ -114,9 +114,19 @@ def get_conv_2D(inputs, kernel_size, in_channel, filters, strides, conv_type,
     :param conv_type: the convolution with spectral or spatial param
     initiliaztion
     :param use_bias: should we add the bias to the convolution or not
+    :param random_seed: the initial number to initialize random generator
     :param data_format: where to put the channel, as last of second dimension
     :return: the convolutional layer
     """
+
+    if data_format == 'channels_last':
+        in_channel = inputs.shape[3].value
+        strides = [1, strides, strides, 1]
+        data_format = "NHWC"
+    elif data_format == 'channels_first':
+        in_channel = inputs.shape[1].value
+        strides = [1, 1, strides, strides]
+        data_format = "NCHW"
 
     spatial_weights = get_spatial_weights(
         kernel_size=kernel_size, in_channel=in_channel,

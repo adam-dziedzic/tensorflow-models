@@ -315,23 +315,14 @@ class Model(object):
         :param filters: Number of filters required
         :param kernel_size: Kernel size
         :param strides: The stride for the filter
-        :param padding: Padding applied before convolution
+        :param padding: Padding applied before convolutionŁ
         :param use_bias: if bias should be added to each filter
         """
-        if self.data_format == 'channels_last':
-            in_channel = inputs.shape[3].value
-            strides = [1, strides, strides, 1]
-            data_format = "NHWC"
-        elif self.data_format == 'channels_first':
-            in_channel = inputs.shape[1].value
-            strides = [1, 1, strides, strides]
-            data_format = "NCHW"
-
-        out = get_conv_2D(inputs, kernel_size=kernel_size,
-                          in_channel=in_channel, filter=filters,
-                          strides=strides, conv_type = self.conv_type,
-                          use_bias=False, random_seed=self.random_seed,
-                          data_format=data_format)
+        out = get_conv_2D(
+            inputs, kernel_size=kernel_size, in_channel=in_channel,
+            filter=filters, padding=padding, strides=strides,
+            conv_type=self.conv_type, use_bias=use_bias,
+            random_seed=self.random_seed, data_format=self.data_format)
 
         return out
 
