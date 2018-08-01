@@ -28,6 +28,7 @@ from absl import flags
 from official.nets import densenet_model
 from official.nets import resnet_model
 from official.nets import run_loop
+from official.nets import utils
 from official.utils.flags import core as flags_core
 from official.utils.logs import logger
 
@@ -236,7 +237,7 @@ def cifar10_model_fn(features, labels, mode, params):
         boundary_epochs = [10, 150, 200, 300]
         decay_rates = [1, 0.1, 0.01, 0.001, 0.0001]
 
-    learning_rate_fn = run_loop.learning_rate_with_decay(
+    learning_rate_fn = utils.learning_rate_with_decay(
         batch_size=batch_size, batch_denom=batch_denom,
         num_images=_NUM_IMAGES['train'], boundary_epochs=boundary_epochs,
         decay_rates=decay_rates)
