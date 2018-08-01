@@ -545,7 +545,7 @@ def define_nets_flags(resnet_size_choices=None):
 
     optimizer_types = OptimizerType.get_names()
     flags.DEFINE_enum(
-        name='optimizer_type', short_name='opt', default='ADAM',
+        name='optimizer_type', short_name='opt', default='MOMENTUM',
         enum_values=optimizer_types,
         help=flags_core.help_wrap(
             'Version of the optimizer to use, e.g., ' + ",".join(

@@ -26,7 +26,6 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-
 import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.applications import imagenet_utils
@@ -58,6 +57,12 @@ DENSENET201_WEIGHT_PATH = 'https://github.com/fchollet/deep-learning-models/rele
 DENSENET201_WEIGHT_PATH_NO_TOP = 'https://github.com/fchollet/deep-learning-models/releases/download/v0.8/densenet201_weights_tf_dim_ordering_tf_kernels_notop.h5'
 
 DEFAULT_CONV_TYPE = ConvType.STANDARD
+
+
+class DenseNetSize(EnumWithNames):
+    DENSE_NET_121 = 1
+    DENSE_NET_169 = 2
+    DENSE_NET_201 = 3
 
 
 def conv_2D(inputs, filters, kernel_size, name, conv_type, padding='valid',
@@ -302,7 +307,7 @@ def DenseNet(blocks,
 
     if include_top:
         x = GlobalAveragePooling2D(name='avg_pool')(x)
-        x = Dense(classes, activation='softmax', name='fc1000')(x)
+        x = Dense(classes, activation='softmax', name='fc' + str(classes))(x)
     else:
         if pooling == 'avg':
             x = GlobalAveragePooling2D(name='avg_pool')(x)
@@ -373,24 +378,21 @@ def DenseNet(blocks,
     return model
 
 
-class DenseNetSize(EnumWithNames):
-    DENSE_NET_121 = 1
-    DENSE_NET_169 = 2
-    DENSE_NET_201 = 3
-
-
 def DenseNet121(conv_type=ConvType.STANDARD,
                 include_top=True,
                 weights=None,
                 input_tensor=None,
                 input_shape=None,
                 pooling=None,
-                classes=10):
+                classes=10,
+                default_size=32,
+                min_size=32):
     tf.logging.info("Chosen DenseNet121")
     return DenseNet(blocks=[6, 12, 24, 16], conv_type=conv_type,
                     include_top=include_top, weights=weights,
                     input_tensor=input_tensor, input_shape=input_shape,
-                    pooling=pooling, classes=classes)
+                    pooling=pooling, classes=classes, default_size=default_size,
+                    min_size=min_size)
 
 
 def DenseNet169(conv_type=ConvType.STANDARD,
@@ -399,12 +401,15 @@ def DenseNet169(conv_type=ConvType.STANDARD,
                 input_tensor=None,
                 input_shape=None,
                 pooling=None,
-                classes=10):
+                classes=10,
+                default_size=32,
+                min_size=32):
     tf.logging.info("Chosen DenseNet169")
     return DenseNet(blocks=[6, 12, 32, 32], conv_type=conv_type,
                     include_top=include_top, weights=weights,
                     input_tensor=input_tensor, input_shape=input_shape,
-                    pooling=pooling, classes=classes)
+                    pooling=pooling, classes=classes, default_size=default_size,
+                    min_size=min_size)
 
 
 def DenseNet201(conv_type=ConvType.STANDARD,
@@ -413,12 +418,15 @@ def DenseNet201(conv_type=ConvType.STANDARD,
                 input_tensor=None,
                 input_shape=None,
                 pooling=None,
-                classes=10):
+                classes=10,
+                default_size=32,
+                min_size=32):
     tf.logging.info("Chosen DenseNet201")
     return DenseNet(blocks=[6, 12, 48, 32], conv_type=conv_type,
                     include_top=include_top, weights=weights,
                     input_tensor=input_tensor, input_shape=input_shape,
-                    pooling=pooling, classes=classes)
+                    pooling=pooling, classes=classes, default_size=default_size,
+                    min_size=min_size)
 
 
 def preprocess_input(x, data_format=None):
