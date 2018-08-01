@@ -330,7 +330,7 @@ def masked_conv_aff_coupling(input_, mask_in, dim, name,
         res = tf.nn.relu(res)
         res = resnet(input_=res, dim_in=dim_in, dim=dim,
                      dim_out=2 * channels,
-                     name="resnet", use_batch_norm=use_batch_norm,
+                     name="nets", use_batch_norm=use_batch_norm,
                      train=train, weight_norm=weight_norm,
                      residual_blocks=residual_blocks,
                      bottleneck=bottleneck, skip=skip)
@@ -419,7 +419,7 @@ def masked_conv_add_coupling(input_, mask_in, dim, name,
         dim_in = 2. * channels + 1
         res = tf.nn.relu(res)
         shift = resnet(input_=res, dim_in=dim_in, dim=dim, dim_out=channels,
-                       name="resnet", use_batch_norm=use_batch_norm,
+                       name="nets", use_batch_norm=use_batch_norm,
                        train=train, weight_norm=weight_norm,
                        residual_blocks=residual_blocks,
                        bottleneck=bottleneck, skip=skip)
@@ -508,7 +508,7 @@ def conv_ch_aff_coupling(input_, dim, name,
         dim_in = 2. * channels
         res = tf.nn.relu(res)
         res = resnet(input_=res, dim_in=dim_in, dim=dim, dim_out=2 * channels,
-                     name="resnet", use_batch_norm=use_batch_norm,
+                     name="nets", use_batch_norm=use_batch_norm,
                      train=train, weight_norm=weight_norm,
                      residual_blocks=residual_blocks,
                      bottleneck=bottleneck, skip=skip)
@@ -589,7 +589,7 @@ def conv_ch_add_coupling(input_, dim, name,
         dim_in = 2. * channels
         res = tf.nn.relu(res)
         shift = resnet(input_=res, dim_in=dim_in, dim=dim, dim_out=channels,
-                       name="resnet", use_batch_norm=use_batch_norm,
+                       name="nets", use_batch_norm=use_batch_norm,
                        train=train, weight_norm=weight_norm,
                        residual_blocks=residual_blocks,
                        bottleneck=bottleneck, skip=skip)

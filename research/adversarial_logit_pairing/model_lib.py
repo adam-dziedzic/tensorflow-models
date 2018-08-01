@@ -147,7 +147,7 @@ def get_model(model_name, num_classes):
   Returns:
     Function, which creates model when called.
   """
-  if model_name.startswith('resnet'):
+  if model_name.startswith('nets'):
     def resnet_model(images, is_training, reuse=tf.AUTO_REUSE):
       with tf.contrib.framework.arg_scope(resnet_v2.resnet_arg_scope()):
         resnet_fn = RESNET_MODELS[model_name]

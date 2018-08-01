@@ -45,7 +45,7 @@ tf.logging.set_verbosity(tf.logging.INFO)
 
 
 def get_model_fn(num_gpus, variable_strategy, num_workers):
-  """Returns a function that will build the resnet model."""
+  """Returns a function that will build the nets model."""
 
   def _resnet_model_fn(features, labels, mode, params):
     """Resnet model body.
@@ -102,7 +102,7 @@ def get_model_fn(num_gpus, variable_strategy, num_workers):
             worker_device=worker_device,
             ps_strategy=tf.contrib.training.GreedyLoadBalancingStrategy(
                 num_gpus, tf.contrib.training.byte_size_load_fn))
-      with tf.variable_scope('resnet', reuse=bool(i != 0)):
+      with tf.variable_scope('nets', reuse=bool(i != 0)):
         with tf.name_scope('tower_%d' % i) as name_scope:
           with tf.device(device_setter):
             loss, gradvars, preds = _tower_fn(

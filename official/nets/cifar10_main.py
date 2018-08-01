@@ -20,12 +20,14 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+
 import tensorflow as tf  # pylint: disable=g-bad-import-order
 from absl import app as absl_app
 from absl import flags
 
-from official.resnet import resnet_model
-from official.resnet import resnet_run_loop
+from official.nets import densenet_model
+from official.nets import resnet_model
+from official.nets import run_loop
 from official.utils.flags import core as flags_core
 from official.utils.logs import logger
 
@@ -129,7 +131,7 @@ def input_fn(is_training, data_dir, batch_size, num_epochs=250, num_gpus=None,
     filenames = get_filenames(is_training, data_dir)
     dataset = tf.data.FixedLengthRecordDataset(filenames, _RECORD_BYTES)
 
-    return resnet_run_loop.process_record_dataset(
+    return run_loop.process_record_dataset(
         dataset=dataset,
         is_training=is_training,
         batch_size=batch_size,
@@ -143,7 +145,7 @@ def input_fn(is_training, data_dir, batch_size, num_epochs=250, num_gpus=None,
 
 
 def get_synth_input_fn():
-    return resnet_run_loop.get_synth_input_fn(
+    return run_loop.get_synth_input_fn(
         height=_HEIGHT, width=_WIDTH, num_channels=_NUM_CHANNELS,
         num_classes=_NUM_CLASSES, data_format="channels_last")
 
@@ -151,15 +153,14 @@ def get_synth_input_fn():
 ###############################################################################
 # Running the model
 ###############################################################################
-class Cifar10Model(resnet_model.Model):
+class Cifar10ResnetModel(resnet_model.Model):
     """Model class with appropriate defaults for CIFAR-10 data."""
 
     def __init__(self, resnet_size, data_format=_DEFAULT_DATA_FORMAT,
                  num_classes=_NUM_CLASSES,
                  resnet_version=resnet_model.DEFAULT_VERSION,
                  dtype=resnet_model.DEFAULT_DTYPE,
-                 conv_type=resnet_model.DEFAULT_CONV_TYPE,
-                 optimizer_type=resnet_run_loop.DEFAULT_OPTIMIZER):
+                 conv_type=resnet_model.DEFAULT_CONV_TYPE):
         """These are the parameters that work for CIFAR-10 data.
 
         Args:
@@ -182,7 +183,7 @@ class Cifar10Model(resnet_model.Model):
 
         num_blocks = (resnet_size - 2) // 6
 
-        super(Cifar10Model, self).__init__(
+        super(Cifar10ResnetModel, self).__init__(
             resnet_size=resnet_size,
             bottleneck=False,
             num_classes=num_classes,
@@ -202,8 +203,20 @@ class Cifar10Model(resnet_model.Model):
 
 
 def cifar10_model_fn(features, labels, mode, params):
-    """Model function for CIFAR-10."""
+    """Model function for CIFAR-10.
+
+    Initializes the NetModel representing the model layer.
+    """
     data_format = params['data_format']
+    resnet_version = params['resnet_version']
+    conv_type = params['conv_type']
+    dtype = params['dtype']
+    resnet_size = params['resnet_size']
+    model_type = params['model_type']
+    dense_net_size = params['densenet_size']
+    optimizer_type = params['optimizer_type']
+    batch_size = params['batch_size']
+
     if data_format == "channels_first":
         features = tf.reshape(features, [-1, _NUM_CHANNELS, _HEIGHT, _WIDTH])
     else:
@@ -215,7 +228,7 @@ def cifar10_model_fn(features, labels, mode, params):
     boundary_epochs = [100, 150, 200]
     decay_rates = [1, 0.1, 0.01, 0.001]
 
-    if params['optimizer_type'] is resnet_run_loop.OptimizerType.ADAM:
+    if optimizer_type is run_loop.OptimizerType.ADAM:
         # we start from the learning rate 0.001 for the Adam optimizer
         batch_denom = batch_denom * 100
         # use the learning rate which is x, 0.1x, 0.01x, ... and so on
@@ -223,8 +236,8 @@ def cifar10_model_fn(features, labels, mode, params):
         boundary_epochs = [10, 150, 200, 300]
         decay_rates = [1, 0.1, 0.01, 0.001, 0.0001]
 
-    learning_rate_fn = resnet_run_loop.learning_rate_with_decay(
-        batch_size=params['batch_size'], batch_denom=batch_denom,
+    learning_rate_fn = run_loop.learning_rate_with_decay(
+        batch_size=batch_size, batch_denom=batch_denom,
         num_images=_NUM_IMAGES['train'], boundary_epochs=boundary_epochs,
         decay_rates=decay_rates)
 
@@ -240,35 +253,57 @@ def cifar10_model_fn(features, labels, mode, params):
     def loss_filter_fn(_):
         return True
 
-    return resnet_run_loop.resnet_model_fn(
+    if model_type is run_loop.ModelType.RES_NET:
+        model = Cifar10ResnetModel(
+            resnet_size, data_format, resnet_version=resnet_version,
+            dtype=dtype,
+            conv_type=conv_type)
+    elif model_type is run_loop.ModelType.DENSE_NET:
+        if dense_net_size is densenet_model.DenseNetSize.DENSE_NET_121:
+            model = densenet_model.DenseNet121(conv_type=conv_type,
+                                               weights=None, classes=10)
+        elif dense_net_size is densenet_model.DenseNetSize.DENSE_NET_169:
+            model = densenet_model.DenseNet169(conv_type=conv_type,
+                                               weights=None, classes=10)
+        elif dense_net_size is densenet_model.DenseNetSize.DENSE_NET_201:
+            model = densenet_model.DenseNet201(conv_type=conv_type,
+                                               weights=None, classes=10)
+        else:
+            raise ValueError(
+                "Unknown dense net model size. Please choose from: " +
+                ",".join(densenet_model.DenseNetSize.get_names()))
+    else:
+        raise ValueError("Unknown model type, please choose from: "
+                         + ".".join(run_loop.ModelType.get_names()))
+
+    return run_loop.net_model_fn(
         features=features,
         labels=labels,
         mode=mode,
-        model_class=Cifar10Model,
-        resnet_size=params['resnet_size'],
+        model=model,
+        resnet_size=resnet_size,
         weight_decay=weight_decay,
         learning_rate_fn=learning_rate_fn,
         momentum=0.9,
         data_format=data_format,
-        # data_format="channels_last",
-        resnet_version=params['resnet_version'],
+        resnet_version=resnet_version,
         loss_scale=params['loss_scale'],
         loss_filter_fn=loss_filter_fn,
-        dtype=params['dtype'],
-        conv_type=params['conv_type'],
+        dtype=dtype,
+        conv_type=conv_type,
         optimizer_type=params['optimizer_type'],
         run_type=params['run_type']
     )
 
 
 def define_cifar_flags():
-    resnet_run_loop.define_resnet_flags()
-    flags.adopt_module_key_flags(resnet_run_loop)
+    run_loop.define_nets_flags()
+    flags.adopt_module_key_flags(run_loop)
     flags_core.set_defaults(data_dir='data/cifar10_data',
                             model_dir='data/cifar10_model',
                             resnet_size='32',
-                            train_epochs=250,
-                            epochs_between_evals=10,
+                            train_epochs=300,
+                            epochs_between_evals=1,
                             batch_size=128)
 
 
@@ -280,7 +315,7 @@ def run_cifar(flags_obj):
     """
     input_function = (flags_obj.use_synthetic_data and get_synth_input_fn()
                       or input_fn)
-    resnet_run_loop.resnet_main(
+    run_loop.net_main(
         flags_obj, cifar10_model_fn, input_function, DATASET_NAME,
         shape=[_HEIGHT, _WIDTH, _NUM_CHANNELS])
 

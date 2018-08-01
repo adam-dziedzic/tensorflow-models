@@ -182,7 +182,7 @@ def running_combine(fss_logits, confs_probs, incremental_locs,
 def get_map_from_images(imgs, mapper_arch, task_params, freeze_conv, wt_decay,
                         is_training, batch_norm_is_training_op, num_maps,
                         split_maps=True):
-  # Hit image with a resnet.
+  # Hit image with a nets.
   n_views = len(task_params.aux_delta_thetas) + 1
   out = utils.Foo()
 

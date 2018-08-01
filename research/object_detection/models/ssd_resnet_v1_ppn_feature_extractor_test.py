@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Tests for ssd resnet v1 feature extractors."""
+"""Tests for ssd nets v1 feature extractors."""
 import tensorflow as tf
 
 from object_detection.models import ssd_resnet_v1_ppn_feature_extractor

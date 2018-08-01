@@ -57,8 +57,8 @@ class _SSDResnetV1FpnFeatureExtractor(ssd_meta_arch.SSDFeatureExtractor):
       conv_hyperparams_fn: A function to construct tf slim arg_scope for conv2d
         and separable_conv2d ops in the layers that are added on top of the
         base feature extractor.
-      resnet_base_fn: base resnet network to use.
-      resnet_scope_name: scope name under which to construct resnet
+      resnet_base_fn: base nets network to use.
+      resnet_scope_name: scope name under which to construct nets
       fpn_scope_name: scope name under which to construct the feature pyramid
         network.
       reuse_weights: Whether to reuse variables. Default is None.
@@ -103,7 +103,7 @@ class _SSDResnetV1FpnFeatureExtractor(ssd_meta_arch.SSDFeatureExtractor):
     return resized_inputs - [[channel_means]]
 
   def _filter_features(self, image_features):
-    # TODO(rathodv): Change resnet endpoint to strip scope prefixes instead
+    # TODO(rathodv): Change nets endpoint to strip scope prefixes instead
     # of munging the scope here.
     filtered_image_features = dict({})
     for key, feature in image_features.items():

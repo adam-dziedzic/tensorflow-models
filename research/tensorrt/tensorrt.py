@@ -33,7 +33,7 @@ import tensorflow as tf
 from tensorflow.contrib.saved_model.python.saved_model import reader
 import tensorflow.contrib.tensorrt as trt
 
-from official.resnet import imagenet_preprocessing  # pylint: disable=g-bad-import-order
+from official.nets import imagenet_preprocessing  # pylint: disable=g-bad-import-order
 
 _GPU_MEM_FRACTION = 0.50
 _WARMUP_NUM_LOOPS = 5

@@ -31,7 +31,7 @@ slim = tf.contrib.slim
 
 
 def block35(net, scale=1.0, activation_fn=tf.nn.relu, scope=None, reuse=None):
-  """Builds the 35x35 resnet block."""
+  """Builds the 35x35 nets block."""
   with tf.variable_scope(scope, 'Block35', [net], reuse=reuse):
     with tf.variable_scope('Branch_0'):
       tower_conv = slim.conv2d(net, 32, 1, scope='Conv2d_1x1')
@@ -57,7 +57,7 @@ def block35(net, scale=1.0, activation_fn=tf.nn.relu, scope=None, reuse=None):
 
 
 def block17(net, scale=1.0, activation_fn=tf.nn.relu, scope=None, reuse=None):
-  """Builds the 17x17 resnet block."""
+  """Builds the 17x17 nets block."""
   with tf.variable_scope(scope, 'Block17', [net], reuse=reuse):
     with tf.variable_scope('Branch_0'):
       tower_conv = slim.conv2d(net, 192, 1, scope='Conv2d_1x1')
@@ -83,7 +83,7 @@ def block17(net, scale=1.0, activation_fn=tf.nn.relu, scope=None, reuse=None):
 
 
 def block8(net, scale=1.0, activation_fn=tf.nn.relu, scope=None, reuse=None):
-  """Builds the 8x8 resnet block."""
+  """Builds the 8x8 nets block."""
   with tf.variable_scope(scope, 'Block8', [net], reuse=reuse):
     with tf.variable_scope('Branch_0'):
       tower_conv = slim.conv2d(net, 192, 1, scope='Conv2d_1x1')

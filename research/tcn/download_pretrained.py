@@ -47,8 +47,8 @@ if __name__ == '__main__':
   DownloadWeights(inception_dir, INCEPTION_URL)
   print('Done downloading inception pretrained weights.')
 
-  print('Downloading resnet pretrained weights...')
-  resnet_dir = os.path.join(ckpt_dir, 'resnet')
+  print('Downloading nets pretrained weights...')
+  resnet_dir = os.path.join(ckpt_dir, 'nets')
   DownloadWeights(resnet_dir, RESNET_URL)
-  print('Done downloading resnet pretrained weights.')
+  print('Done downloading nets pretrained weights.')
 

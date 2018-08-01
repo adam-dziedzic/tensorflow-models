@@ -19,7 +19,7 @@ We provide some results below, as well as instructions for running this script.
 
 1. [Install TensorFlow.](https://www.tensorflow.org/install/)
 2. [Install TensorRT.](http://docs.nvidia.com/deeplearning/sdk/tensorrt-install-guide/index.html)
-3. We use the image processing functions from the [Official version of ResNet](/official/resnet/imagenet_preprocessing.py). Please checkout the Models repository if you haven't
+3. We use the image processing functions from the [Official version of ResNet](/official/nets/imagenet_preprocessing.py). Please checkout the Models repository if you haven't
 already, and add the Official Models to your Python path:
 
 ```
@@ -30,13 +30,13 @@ export PYTHONPATH="$PYTHONPATH:/path/to/models"
 ### Step 2: Get a model to test
 
 The provided script runs with the [Official version of ResNet trained with
-ImageNet data](/official/resnet), but can be used for other models as well,
+ImageNet data](/official/nets), but can be used for other models as well,
 as long as you have a SavedModel or a Frozen Graph.
 
 You can download the ResNetv2-ImageNet [SavedModel](http://download.tensorflow.org/models/official/resnetv2_imagenet_savedmodel.tar.gz)
 or [Frozen Graph](http://download.tensorflow.org/models/official/resnetv2_imagenet_frozen_graph.pb),
 or, if you want to train the model yourself,
-pass `--export_dir` to the Official ResNet [imagenet_main.py](/official/resnet/imagenet_main.py).
+pass `--export_dir` to the Official ResNet [imagenet_main.py](/official/nets/imagenet_main.py).
 
 When running this script, you can pass in a SavedModel directory containing the
 Protobuf MetaGraphDef and variables directory to `savedmodel_dir`, or pass in

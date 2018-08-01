@@ -35,8 +35,8 @@ HParams = namedtuple('HParams',
                      'relu_leakiness, optimizer')
 
 
-tf.logging.warning("models/research/resnet is deprecated. "
-                   "Please use models/official/resnet instead.")
+tf.logging.warning("models/research/nets is deprecated. "
+                   "Please use models/official/nets instead.")
 
 
 class ResNet(object):

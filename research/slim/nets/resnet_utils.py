@@ -244,7 +244,7 @@ def resnet_arg_scope(weight_decay=0.0001,
     use_batch_norm: Whether or not to use batch normalization.
 
   Returns:
-    An `arg_scope` to use for the resnet models.
+    An `arg_scope` to use for the nets models.
   """
   batch_norm_params = {
       'decay': batch_norm_decay,
