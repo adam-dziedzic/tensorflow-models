@@ -26,8 +26,8 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import tensorflow as tf
 
+import tensorflow as tf
 from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.applications import imagenet_utils
 from tensorflow.python.keras.applications.imagenet_utils import \
@@ -42,6 +42,7 @@ from tensorflow.python.keras.layers import Dense
 from tensorflow.python.keras.layers import GlobalAveragePooling2D
 from tensorflow.python.keras.layers import GlobalMaxPooling2D
 from tensorflow.python.keras.layers import Input
+from tensorflow.python.keras.layers import Lambda
 from tensorflow.python.keras.layers import MaxPooling2D
 from tensorflow.python.keras.layers import ZeroPadding2D
 from tensorflow.python.keras.models import Model
@@ -79,7 +80,7 @@ def conv_2D(inputs, filters, kernel_size, name, conv_type, padding='valid',
                       padding=padding, use_bias=use_bias, name=name,
                       data_format=data_format)(inputs)
     else:
-        return get_conv_2D(
+        return Lambda(get_conv_2D)(
             inputs=inputs, filters=filters, kernel_size=kernel_size,
             strides=strides, padding=padding, use_bias=use_bias, name=name,
             conv_type=conv_type, data_format=data_format)
