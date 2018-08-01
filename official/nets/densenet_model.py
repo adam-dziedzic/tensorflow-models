@@ -74,10 +74,12 @@ def conv_2D(inputs, filters, kernel_size, name, conv_type, padding='valid',
     :param filters: the number of filters for the layer.
     :param kernel_size: the size of the kernel.
     :param name: the name of the layer
+    :param padding: padding for image boundaries
     :param strides: the stride of the convolution, how many pixels should we
     move through for each filter
     :param use_bias: if bias should be added to the output of a convolution
     with a filter
+    :param data_format: channels last or first
     :return: the 2D convolutional layer
     """
     if conv_type == ConvType.STANDARD:
@@ -86,9 +88,9 @@ def conv_2D(inputs, filters, kernel_size, name, conv_type, padding='valid',
                       data_format=data_format)(inputs)
     else:
         return Lambda(get_conv_2D)(
-            inputs=inputs, filters=filters, kernel_size=kernel_size,
-            strides=strides, padding=padding, use_bias=use_bias, name=name,
-            conv_type=conv_type, data_format=data_format)
+            inputs=inputs, kernel_size=kernel_size, filters=filters,
+            conv_type=conv_type, padding=padding, name=name, strides=strides,
+            use_bias=use_bias, data_format=data_format)
 
 
 def dense_block(x, blocks, name, conv_type, data_format="channels_last"):
