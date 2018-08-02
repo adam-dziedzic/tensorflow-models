@@ -87,10 +87,11 @@ def conv_2D(inputs, filters, kernel_size, name, conv_type, padding='valid',
                       padding=padding, use_bias=use_bias, name=name,
                       data_format=data_format)(inputs)
     else:
-        return Lambda(get_conv_2D)(
-            inputs=inputs, kernel_size=kernel_size, filters=filters,
-            conv_type=conv_type, padding=padding, name=name, strides=strides,
-            use_bias=use_bias, data_format=data_format)
+        arguments = {"kernel_size": kernel_size,
+                     "filters": filters, "conv_type": conv_type,
+                     "padding": padding, "name": name, "strides": strides,
+                     "use_bias": use_bias, "data_format": data_format}
+        return Lambda(function=get_conv_2D, arguments=arguments)(inputs=inputs)
 
 
 def dense_block(x, blocks, name, conv_type, data_format="channels_last"):
