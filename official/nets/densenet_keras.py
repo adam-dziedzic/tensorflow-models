@@ -132,7 +132,7 @@ def run():
     for epoch in range(epochs):
         if verbosity > 0:
             print("epoch: ", epoch + 1)
-            print("get global step value: ", tf.train.global_step())
+            # print("get global step value: ", tf.train.global_step())
 
         if data_augmentation:
             batches = 0
