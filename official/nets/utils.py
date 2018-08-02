@@ -116,7 +116,7 @@ def get_spatial_weights(kernel_size, in_channel, filters, conv_type, dtype,
 
 
 def get_conv_2D(inputs, kernel_size, filters, conv_type, padding, name="",
-                strides=1, use_bias=False, random_seed=31, data_format="NHWC"):
+                strides=1, use_bias=False, data_format="NHWC", random_seed=31):
     """
     Get the convolutional layer.
 

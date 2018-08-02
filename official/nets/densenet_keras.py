@@ -23,7 +23,7 @@ mode = ExecMode.TEST
 debug_limit_tuples = 256
 batch_size = 64
 verbosity = 0
-conv_type = ConvType.STANDARD
+conv_type = ConvType.SPECTRAL_PARAM
 num_classes = 10
 data_augmentation = False
 optimizer_type = OptimizerType.ADAM
@@ -98,6 +98,10 @@ def run():
                                                     int(epochs * 0.75)],
                                                 decay_rates=[1, 0.1, 0.01])
 
+    # global_step refers to the number of batches seen by the graph. Every time
+    # a batch is provided, the weights are updated in the direction that
+    # minimizes the loss. global_step just keeps track of the number of batches
+    # seen so far: https://bit.ly/2AAqjs1
     global_step = tf.train.get_or_create_global_step()
     learning_rate = learning_rate_fn(global_step)
 
@@ -105,7 +109,8 @@ def run():
         optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate,
                                                momentum=0.9)
     elif optimizer_type is OptimizerType.ADAM:
-        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+        # optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+        optimizer = tf.train.AdamOptimizer()
 
     model.compile(optimizer=optimizer,
                   loss='sparse_categorical_crossentropy',
@@ -127,6 +132,7 @@ def run():
     for epoch in range(epochs):
         if verbosity > 0:
             print("epoch: ", epoch + 1)
+            print("get global step value: ", tf.train.global_step())
 
         if data_augmentation:
             batches = 0
