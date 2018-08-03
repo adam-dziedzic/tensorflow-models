@@ -1,7 +1,6 @@
-from enum import Enum
-
 import numpy as np
 import tensorflow as tf
+from enum import Enum
 
 
 class EnumWithNames(Enum):
@@ -25,7 +24,7 @@ class ConvType(EnumWithNames):
 def _glorot_sample(kernel_size, in_channel, filters):
     """
     The same definition of the glorot initialization as in tensorflow but
-    for not a variable but for a separate sample.
+    not for a variable but for a separate sample.
 
     :param kernel_size: The width and length of the filter (kernel).
     :param in_channel: Number of input channels for an image (typically 3
@@ -93,7 +92,7 @@ def get_spatial_weights(kernel_size, in_channel, filters, conv_type, dtype,
                              "paramaters should be in [tf.float32, "
                              "tf.float64, tf.float16, tf.bfloat16]")
             spectral_weight = tf.get_variable(
-                name= name + 'spectral_param',
+                name=name + 'spectral_param',
                 initializer=spectral_weight_init)
 
         else:
