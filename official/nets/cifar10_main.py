@@ -161,7 +161,8 @@ class Cifar10ResnetModel(resnet_model.Model):
                  num_classes=_NUM_CLASSES,
                  resnet_version=resnet_model.DEFAULT_VERSION,
                  dtype=resnet_model.DEFAULT_DTYPE,
-                 conv_type=resnet_model.DEFAULT_CONV_TYPE):
+                 conv_type=resnet_model.DEFAULT_CONV_TYPE,
+                 batch_norm_state=utils.BatchNorm.ACTIVE):
         """These are the parameters that work for CIFAR-10 data.
 
         Args:
@@ -199,7 +200,8 @@ class Cifar10ResnetModel(resnet_model.Model):
             resnet_version=resnet_version,
             data_format=data_format,
             dtype=dtype,
-            conv_type=conv_type
+            conv_type=conv_type,
+            batch_norm_state=batch_norm_state
         )
 
 
@@ -214,6 +216,7 @@ def cifar10_model_fn(features, labels, mode, params):
     dtype = params['dtype']
     resnet_size = params['resnet_size']
     model_type = params['model_type']
+    batch_norm_state = params['batch_norm_state']
     dense_net_size = params['densenet_size']
     optimizer_type = params['optimizer_type']
     batch_size = params['batch_size']
@@ -258,7 +261,7 @@ def cifar10_model_fn(features, labels, mode, params):
         model = Cifar10ResnetModel(
             resnet_size, data_format, resnet_version=resnet_version,
             dtype=dtype,
-            conv_type=conv_type)
+            conv_type=conv_type, batch_norm_state=batch_norm_state)
     elif model_type is run_loop.ModelType.DENSE_NET:
         if dense_net_size is densenet_model.DenseNetSize.DENSE_NET_121:
             model = densenet_model.DenseNet121(conv_type=conv_type,

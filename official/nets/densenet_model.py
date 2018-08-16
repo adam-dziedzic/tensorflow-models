@@ -31,7 +31,6 @@ from tensorflow.python.keras import backend as K
 from tensorflow.python.keras.applications import imagenet_utils
 from tensorflow.python.keras.applications.imagenet_utils import \
     _obtain_input_shape
-from tensorflow.python.keras.engine.network import get_source_inputs
 from tensorflow.python.keras.layers import Activation
 from tensorflow.python.keras.layers import AveragePooling2D
 from tensorflow.python.keras.layers import BatchNormalization

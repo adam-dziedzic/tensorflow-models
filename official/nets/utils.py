@@ -21,6 +21,11 @@ class ConvType(EnumWithNames):
     SPATIAL_PARAM = 4
 
 
+class BatchNorm(EnumWithNames):
+    ACTIVE = 0
+    INACTIVE = 1
+
+
 def _glorot_sample(kernel_size, in_channel, filters):
     """
     The same definition of the glorot initialization as in tensorflow but

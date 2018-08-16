@@ -32,8 +32,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-
-from .utils import ConvType, get_conv_2D
+from .utils import ConvType, get_conv_2D, BatchNorm
 
 _BATCH_NORM_DECAY = 0.997
 _BATCH_NORM_EPSILON = 1e-5
@@ -43,7 +42,7 @@ CASTABLE_TYPES = (tf.float16,)
 ALLOWED_TYPES = (DEFAULT_DTYPE,) + CASTABLE_TYPES
 DEFAULT_CONV_TYPE = ConvType.SPECTRAL_PARAM
 DEFAULT_RANDOM_SEED = 31
-
+DEFAULT_BATCH_NORM_STATE = BatchNorm.ACTIVE
 
 ################################################################################
 # Convenience functions for building the ResNet model.
@@ -86,7 +85,8 @@ class Model(object):
                  block_sizes, block_strides, final_size,
                  resnet_version=DEFAULT_VERSION, data_format=None,
                  dtype=DEFAULT_DTYPE, conv_type=DEFAULT_CONV_TYPE,
-                 random_seed=DEFAULT_RANDOM_SEED, is_batch_norm=False):
+                 random_seed=DEFAULT_RANDOM_SEED,
+                 batch_norm_state=DEFAULT_BATCH_NORM_STATE):
         """Creates a model for classifying an image.
 
         Args:
@@ -165,7 +165,11 @@ class Model(object):
         self.pre_activation = resnet_version == 2
         self.conv_type = conv_type
         self.random_seed = random_seed
-        self.is_batch_norm = is_batch_norm
+
+        if batch_norm_state is BatchNorm.ACTIVE:
+            self.is_batch_norm = True
+        else:
+            self.is_batch_norm = False
 
     def _custom_dtype_getter(self, getter, name, shape=None,
                              dtype=DEFAULT_DTYPE,
@@ -303,12 +307,14 @@ class Model(object):
         # We set fused=True for a significant performance boost. See
         # https://www.tensorflow.org/performance/performance_guide#common_fused_ops
         if self.is_batch_norm:
+            print("Batch norm active")
             return tf.layers.batch_normalization(
                 inputs=inputs, axis=1 if data_format == 'channels_first' else 3,
                 momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON,
                 center=True,
                 scale=True, training=training, fused=True)
         else:
+            print("Batch norm inactive")
             return inputs
 
     def conv2d_spectral_param(self, inputs, filters, kernel_size, strides,
