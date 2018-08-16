@@ -58,6 +58,11 @@ class ModelType(EnumWithNames):
     DENSE_NET = 1
 
 
+class BatchNorm(EnumWithNames):
+    ACTIVE = 0
+    INACTIVE = 1
+
+
 DEFAULT_OPTIMIZER = OptimizerType.ADAM
 DEFAULT_RUN_TYPE = RunType.TEST
 DEFAULT_MODEL_TYPE = ModelType.DENSE_NET
