@@ -59,6 +59,8 @@ class NCFDataset(object):
       item_map: Dict mapping raw item ids to regularized ids.
       num_data_readers: The number of reader Datasets used during training.
       cache_paths: Object containing locations for various cache files.
+      num_train_positives: The number of positive training examples in the
+        dataset.
     """
 
     self.user_map = {int(k): int(v) for k, v in user_map.items()}
@@ -255,9 +257,6 @@ def generate_train_eval_data(df, approx_num_shards, num_items, cache_paths):
     num_items: The cardinality of the item set.
     cache_paths: rconst.Paths object containing locations for various cache
       files.
-
-  Returns:
-    A tuple containing the validation data.
   """
 
   num_rows = len(df)
@@ -419,9 +418,7 @@ def instantiate_pipeline(dataset, data_dir, batch_size, eval_batch_size,
   tf.logging.info(
       "Generation subprocess command: {}".format(" ".join(subproc_args)))
 
-  proc = subprocess.Popen(args=subproc_args, stdin=subprocess.PIPE,
-                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                          shell=False, env=subproc_env)
+  proc = subprocess.Popen(args=subproc_args, shell=False, env=subproc_env)
 
   atexit.register(_shutdown, proc=proc)
   atexit.register(tf.gfile.DeleteRecursively,

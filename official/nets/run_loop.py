@@ -38,6 +38,7 @@ from official.utils.logs import logger
 from official.utils.misc import distribution_utils
 from official.utils.misc import model_helpers
 from .utils import EnumWithNames
+from .utils import BatchNorm
 
 
 # pylint: enable=g-bad-import-order
@@ -60,7 +61,8 @@ class ModelType(EnumWithNames):
 
 DEFAULT_OPTIMIZER = OptimizerType.ADAM
 DEFAULT_RUN_TYPE = RunType.TEST
-DEFAULT_MODEL_TYPE = ModelType.DENSE_NET
+DEFAULT_MODEL_TYPE = ModelType.RES_NET
+DEFAULT_DATA_FORMAT = "channels_last"
 
 
 ################################################################################
@@ -69,7 +71,7 @@ DEFAULT_MODEL_TYPE = ModelType.DENSE_NET
 def process_record_dataset(dataset, is_training, batch_size, shuffle_buffer,
                            parse_record_fn, num_epochs=1, num_gpus=None,
                            examples_per_epoch=None,
-                           data_format="channels_last"):
+                           data_format=DEFAULT_DATA_FORMAT):
     """Given a Dataset with raw records, return an iterator over the records.
 
     Args:
@@ -134,7 +136,7 @@ def process_record_dataset(dataset, is_training, batch_size, shuffle_buffer,
 
 
 def get_synth_input_fn(height, width, num_channels, num_classes,
-                       data_format="channels_last"):
+                       data_format=DEFAULT_DATA_FORMAT):
     # pylint: disable=unused-argument
     """Returns an input function that returns a dataset with zeroes.
 
@@ -160,7 +162,7 @@ def get_synth_input_fn(height, width, num_channels, num_classes,
         if data_format == "channels_first":
             input_shape = tf.TensorShape(
                 [batch_size, num_channels, height, width])
-        else:
+        else:  # channels_last
             input_shape = tf.TensorShape(
                 [batch_size, height, width, num_channels])
         return model_helpers.generate_synthetic_data(
@@ -390,7 +392,8 @@ def net_main(
             'dtype': flags_core.get_tf_dtype(flags_obj),
             'conv_type': resnet_model.ConvType[flags_obj.conv_type],
             'optimizer_type': OptimizerType[flags_obj.optimizer_type],
-            'run_type': RunType[flags_obj.run_type]
+            'run_type': RunType[flags_obj.run_type],
+            'batch_norm_state': BatchNorm[flags_obj.batch_norm_state]
         })
 
     run_params = {
@@ -405,7 +408,8 @@ def net_main(
         'train_epochs': flags_obj.train_epochs,
         'conv_type': resnet_model.ConvType[flags_obj.conv_type],
         'optimizer_type': OptimizerType[flags_obj.optimizer_type],
-        'run_type': RunType[flags_obj.run_type]
+        'run_type': RunType[flags_obj.run_type],
+        'batch_norm_state': BatchNorm[flags_obj.batch_norm_state]
     }
     if flags_obj.use_synthetic_data:
         dataset_name = dataset_name + '-synthetic'
@@ -516,10 +520,17 @@ def define_nets_flags(resnet_size_choices=None):
 
     model_types = ModelType.get_names()
     flags.DEFINE_enum(
-        name='model_type', short_name='model', default='DENSE_NET',
+        name='model_type', short_name='model', default='RES_NET',
         enum_values=model_types,
         help=flags_core.help_wrap(
             'Type of the model: ' + ",".join(model_types)))
+
+    batch_norm_states = BatchNorm.get_names()
+    flags.DEFINE_enum(
+        name='batch_norm_state', short_name='bn', default='INACTIVE',
+        enum_values=batch_norm_states,
+        help=flags_core.help_wrap(
+            'States of the batch norm: ' + ",".join(batch_norm_states)))
 
     densenet_sizes = densenet_model.DenseNetSize.get_names()
     flags.DEFINE_enum(

@@ -1,3 +1,5 @@
+import time
+
 import argparse
 import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -19,10 +21,10 @@ class ExecMode(EnumWithNames):
 
 model_type = DenseNetSize.DENSE_NET_121
 epochs = 300
-mode = ExecMode.TEST
-debug_limit_tuples = 256
+mode = ExecMode.DEBUG
+debug_limit_tuples = 1024
 batch_size = 64
-verbosity = 0
+verbosity = 1
 conv_type = ConvType.SPECTRAL_PARAM
 num_classes = 10
 data_augmentation = False
@@ -69,8 +71,8 @@ def run():
     if data_augmentation:
         if verbosity > 0:
             print("Applying data augmentation")
-        #y_train = tf.keras.utils.to_categorical(y_train, num_classes)
-        #y_test = tf.keras.utils.to_categorical(y_test, num_classes)
+        # y_train = tf.keras.utils.to_categorical(y_train, num_classes)
+        # y_test = tf.keras.utils.to_categorical(y_test, num_classes)
         datagen = ImageDataGenerator(
             featurewise_center=True,
             featurewise_std_normalization=True,
@@ -129,10 +131,11 @@ def run():
     if verbosity > 0:
         print("epochs: ", epochs)
     # run epoch at a time and then evaluate on the train and test sets
+    start_time = time.time()
     for epoch in range(epochs):
         if verbosity > 0:
             print("epoch: ", epoch + 1)
-            print("get global step value: ", tf.train.global_step())
+            # print("get global step value: ", tf.train.global_step())
 
         if data_augmentation:
             batches = 0
@@ -154,7 +157,8 @@ def run():
                                    batch_size=batch_size)
         print("evaluation,epoch,", epoch + 1, ",train loss,", train_eval[0],
               ",train accuracy,", train_eval[1], ",test loss,",
-              test_eval[0], ",test accuracy,", test_eval[1])
+              test_eval[0], ",test accuracy,", test_eval[1],
+              ",elapsed time (sec),", time.time() - start_time)
 
         # the eval return loss for the whole data set (not only a given batch)
         # and the second returned value is the model metric, in this case the

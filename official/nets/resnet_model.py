@@ -32,8 +32,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-
-from .utils import ConvType, get_conv_2D
+from .utils import ConvType, get_conv_2D, BatchNorm
 
 _BATCH_NORM_DECAY = 0.997
 _BATCH_NORM_EPSILON = 1e-5
@@ -43,20 +42,11 @@ CASTABLE_TYPES = (tf.float16,)
 ALLOWED_TYPES = (DEFAULT_DTYPE,) + CASTABLE_TYPES
 DEFAULT_CONV_TYPE = ConvType.SPECTRAL_PARAM
 DEFAULT_RANDOM_SEED = 31
-
+DEFAULT_BATCH_NORM_STATE = BatchNorm.ACTIVE
 
 ################################################################################
 # Convenience functions for building the ResNet model.
 ################################################################################
-def batch_norm(inputs, training, data_format):
-    """Performs a batch normalization using a standard set of parameters."""
-    # We set fused=True for a significant performance boost. See
-    # https://www.tensorflow.org/performance/performance_guide#common_fused_ops
-    return tf.layers.batch_normalization(
-        inputs=inputs, axis=1 if data_format == 'channels_first' else 3,
-        momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON,
-        center=True,
-        scale=True, training=training, fused=True)
 
 
 def fixed_padding(inputs, kernel_size, data_format):
@@ -95,7 +85,8 @@ class Model(object):
                  block_sizes, block_strides, final_size,
                  resnet_version=DEFAULT_VERSION, data_format=None,
                  dtype=DEFAULT_DTYPE, conv_type=DEFAULT_CONV_TYPE,
-                 random_seed=DEFAULT_RANDOM_SEED):
+                 random_seed=DEFAULT_RANDOM_SEED,
+                 batch_norm_state=DEFAULT_BATCH_NORM_STATE):
         """Creates a model for classifying an image.
 
         Args:
@@ -127,6 +118,7 @@ class Model(object):
             tf.float32 is used.
           conv_type: The type of the convolution (for example, a standard one
             and the one with parameter initialization in the spectral domain).
+          is_batch_norm: is the batch norm active
 
         Raises:
           ValueError: if invalid version is selected.
@@ -173,6 +165,11 @@ class Model(object):
         self.pre_activation = resnet_version == 2
         self.conv_type = conv_type
         self.random_seed = random_seed
+
+        if batch_norm_state is BatchNorm.ACTIVE:
+            self.is_batch_norm = True
+        else:
+            self.is_batch_norm = False
 
     def _custom_dtype_getter(self, getter, name, shape=None,
                              dtype=DEFAULT_DTYPE,
@@ -266,7 +263,7 @@ class Model(object):
             # perform these for both the shortcut and non-shortcut paths as
             # part of the first block's projection. Cf. Appendix of [2].
             if self.resnet_version == 1:
-                inputs = batch_norm(inputs, training, self.data_format)
+                inputs = self.batch_norm(inputs, training, self.data_format)
                 inputs = tf.nn.relu(inputs)
 
             if self.first_pool_size:
@@ -288,7 +285,7 @@ class Model(object):
             # Only apply the BN and ReLU for model that does pre_activation in
             # each building/bottleneck block, eg nets V2.
             if self.pre_activation:
-                inputs = batch_norm(inputs, training, self.data_format)
+                inputs = self.batch_norm(inputs, training, self.data_format)
                 inputs = tf.nn.relu(inputs)
 
             # The current top layer has shape
@@ -303,6 +300,21 @@ class Model(object):
             inputs = tf.reshape(inputs, [-1, self.final_size])
             inputs = tf.layers.dense(inputs=inputs, units=self.num_classes)
             inputs = tf.identity(inputs, 'final_dense')
+            return inputs
+
+    def batch_norm(self, inputs, training, data_format):
+        """Performs a batch normalization using a standard set of parameters."""
+        # We set fused=True for a significant performance boost. See
+        # https://www.tensorflow.org/performance/performance_guide#common_fused_ops
+        if self.is_batch_norm:
+            print("Batch norm active")
+            return tf.layers.batch_normalization(
+                inputs=inputs, axis=1 if data_format == 'channels_first' else 3,
+                momentum=_BATCH_NORM_DECAY, epsilon=_BATCH_NORM_EPSILON,
+                center=True,
+                scale=True, training=training, fused=True)
+        else:
+            print("Batch norm inactive")
             return inputs
 
     def conv2d_spectral_param(self, inputs, filters, kernel_size, strides,
@@ -392,19 +404,19 @@ class Model(object):
         if projection_shortcut is not None:
             with self._model_variable_scope("shortcut"):
                 shortcut = projection_shortcut(inputs)
-                shortcut = batch_norm(inputs=shortcut, training=training,
-                                      data_format=self.data_format)
+                shortcut = self.batch_norm(inputs=shortcut, training=training,
+                                           data_format=self.data_format)
 
         with self._model_variable_scope("first_conv"):
             inputs = self.conv2d_fixed_padding(
                 inputs=inputs, filters=filters, kernel_size=3, strides=strides)
-            inputs = batch_norm(inputs, training, self.data_format)
+            inputs = self.batch_norm(inputs, training, self.data_format)
             inputs = tf.nn.relu(inputs)
 
         with self._model_variable_scope("second_conv"):
             inputs = self.conv2d_fixed_padding(
                 inputs=inputs, filters=filters, kernel_size=3, strides=1)
-            inputs = batch_norm(inputs, training, self.data_format)
+            inputs = self.batch_norm(inputs, training, self.data_format)
 
         inputs += shortcut
         inputs = tf.nn.relu(inputs)
@@ -435,7 +447,7 @@ class Model(object):
           The output tensor of the block; shape should match inputs.
         """
         shortcut = inputs
-        inputs = batch_norm(inputs, training, self.data_format)
+        inputs = self.batch_norm(inputs, training, self.data_format)
         inputs = tf.nn.relu(inputs)
 
         # The projection shortcut should come after the first batch norm and
@@ -447,7 +459,7 @@ class Model(object):
         with self._model_variable_scope("first_conv"):
             inputs = self.conv2d_fixed_padding(
                 inputs=inputs, filters=filters, kernel_size=3, strides=strides)
-            inputs = batch_norm(inputs, training, self.data_format)
+            inputs = self.batch_norm(inputs, training, self.data_format)
             inputs = tf.nn.relu(inputs)
 
         with self._model_variable_scope("second_conv"):
@@ -486,24 +498,27 @@ class Model(object):
         if projection_shortcut is not None:
             with self._model_variable_scope("shortcut"):
                 shortcut = projection_shortcut(inputs)
-                shortcut = batch_norm(inputs=shortcut, training=training)
+                shortcut = self.batch_norm(inputs=shortcut, training=training)
 
         with self._model_variable_scope("first_conv"):
             inputs = self.conv2d_fixed_padding(
                 inputs=inputs, filters=filters, kernel_size=1, strides=1)
-            inputs = batch_norm(inputs, training, data_format=self.data_format)
+            inputs = self.batch_norm(inputs, training,
+                                     data_format=self.data_format)
             inputs = tf.nn.relu(inputs)
 
         with self._model_variable_scope("second_conv"):
             inputs = self.conv2d_fixed_padding(
                 inputs=inputs, filters=filters, kernel_size=3, strides=strides)
-            inputs = batch_norm(inputs, training, data_format=self.data_format)
+            inputs = self.batch_norm(inputs, training,
+                                     data_format=self.data_format)
             inputs = tf.nn.relu(inputs)
 
         with self._model_variable_scope("third_conv"):
             inputs = self.conv2d_fixed_padding(
                 inputs=inputs, filters=4 * filters, kernel_size=1, strides=1)
-            inputs = batch_norm(inputs, training, data_format=self.data_format)
+            inputs = self.batch_norm(inputs, training,
+                                     data_format=self.data_format)
             inputs += shortcut
             inputs = tf.nn.relu(inputs)
 
@@ -541,7 +556,7 @@ class Model(object):
           The output tensor of the block; shape should match inputs.
         """
         shortcut = inputs
-        inputs = batch_norm(inputs, training, data_format=self.data_format)
+        inputs = self.batch_norm(inputs, training, data_format=self.data_format)
         inputs = tf.nn.relu(inputs)
 
         # The projection shortcut should come after the first batch norm and
@@ -553,13 +568,15 @@ class Model(object):
         with self._model_variable_scope("first_conv"):
             inputs = self.conv2d_fixed_padding(
                 inputs=inputs, filters=filters, kernel_size=1, strides=1)
-            inputs = batch_norm(inputs, training, data_format=self.data_format)
+            inputs = self.batch_norm(inputs, training,
+                                     data_format=self.data_format)
             inputs = tf.nn.relu(inputs)
 
         with self._model_variable_scope("second_conv"):
             inputs = self.conv2d_fixed_padding(
                 inputs=inputs, filters=filters, kernel_size=3, strides=strides)
-            inputs = batch_norm(inputs, training, data_format=self.data_format)
+            inputs = self.batch_norm(inputs, training,
+                                     data_format=self.data_format)
             inputs = tf.nn.relu(inputs)
 
         with self._model_variable_scope("third_conv"):
